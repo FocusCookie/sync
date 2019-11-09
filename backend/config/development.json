@@ -1,0 +1,7 @@
+{
+	"name": "Wago IoT Gateway - Development",
+	"environment": "development",
+	"server": {
+		"port": 3000
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"name": "Wago IoT Gateway - Testing",
+	"environment": "development",
+	"server": {
+		"port": 3333
+	}
+}
