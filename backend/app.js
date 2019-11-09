@@ -1,4 +1,5 @@
 const express = require("express");
+require("express-async-errors"); // to handle async errors/exceptions
 const config = require("config");
 const debugStartup = require("debug")("app:startup"); // export DEBUG=app:*
 

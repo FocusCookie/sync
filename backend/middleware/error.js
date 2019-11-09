@@ -1,6 +1,6 @@
-const debugErrorMW = require("debug")("app:debug");
+const debug = require("debug")("app:errorMiddleware");
 
 module.exports = function(err, req, res, next) {
-	debugErrorMW(err);
+	debug(err);
 	res.status(500).send("Something broke!");
 };
