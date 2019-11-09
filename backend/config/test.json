@@ -3,5 +3,8 @@
 	"environment": "development",
 	"server": {
 		"port": 3333
+	},
+	"database": {
+		"host": "mongodb://localhost/wagoGW_dev"
 	}
 }
