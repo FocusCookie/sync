@@ -24,6 +24,7 @@
   "dependencies": {
     "config": "^3.2.4",
     "express": "^4.17.1",
-    "helmet": "^3.21.2"
+    "helmet": "^3.21.2",
+    "morgan": "^1.9.1"
   }
 }
