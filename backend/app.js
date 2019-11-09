@@ -4,11 +4,7 @@ const debugStartup = require("debug")("app:startup"); // export DEBUG=app:*
 
 const app = express();
 
-require("./startup/middleware")(app);
-
-app.get("/", (req, res) => {
-	res.send("hello");
-});
+require("./startup/routes")(app);
 
 debugStartup("Application Name: " + config.get("name"));
 debugStartup("Environment: " + config.get("environment"));
