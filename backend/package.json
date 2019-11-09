@@ -23,6 +23,7 @@
   "homepage": "https://github.com/FocusCookie/wagoGateway#readme",
   "dependencies": {
     "config": "^3.2.4",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "helmet": "^3.21.2"
   }
 }
