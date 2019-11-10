@@ -2,11 +2,11 @@ const express = require("express");
 const router = express.Router();
 const debug = require("debug");
 const config = require("config");
-const autchController = require("../controller/auth");
+const authController = require("../controller/auth");
 require("../startup/database")();
 
 router.post("/", (req, res) => {
-	autchController
+	authController
 		.login(req.body)
 		.then(validLogin => {
 			res.send(validLogin);

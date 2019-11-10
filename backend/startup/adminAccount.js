@@ -1,6 +1,5 @@
 const debug = require("debug")("app:AdminAccount");
 const { User } = require("../models/users");
-const usersController = require("../controller/users");
 const config = require("config");
 const bcrypt = require("bcrypt");
 
@@ -9,7 +8,7 @@ User.findOne({ email: "admin@app.com" }).then(exists => {
 	if (!exists) {
 		const admin = {
 			name: "admin",
-			email: "admin@app.com",
+			email: config.get("adminEmail"),
 			password: config.get("adminPassword"),
 			repeat_password: config.get("adminPassword"),
 			isAdmin: true

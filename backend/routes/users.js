@@ -7,12 +7,16 @@ const auth = require("../middleware/auth");
 const usersController = require("../controller/users");
 const { User } = require("../models/users");
 
-router.get("/me", (req, res) => {
-	debug(req.user);
+router.get("/me", auth, (req, res) => {
+	debug(req.user._id);
 	User.findById(req.user._id)
 		.select("-passsword")
 		.then(user => {
-			res.send(user);
+			if (!user) {
+				res.status(400).send("Invalid Token.");
+			} else {
+				res.send(user);
+			}
 		});
 });
 
