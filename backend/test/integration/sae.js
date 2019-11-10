@@ -5,10 +5,14 @@ const userController = require("../../controller/users");
 const config = require("config");
 const jwt = require("jsonwebtoken");
 
+const adminSchema = {
+	name: "admin",
+	email: "admin@b.com",
+	password: "adminPassword",
+	repeat_password: "adminPassword"
+};
 let userSchema;
-let adminToken;
-let userToken;
-let newUserSchema;
+let login = { email: adminSchema.email, password: adminSchema.password };
 
 describe("Users", () => {
 	beforeEach(async () => {
@@ -19,21 +23,13 @@ describe("Users", () => {
 			password: "userPassword",
 			repeat_password: "userPassword"
 		};
-		newUserSchema = {
-			name: "API User",
-			email: "api@b.com",
-			password: "apiUserPassword",
-			repeat_password: "apiUserPassword"
-		};
-
-		adminToken = new User({ isAdmin: true }).generateToken();
-
-		await userController.createUser(userSchema);
-		const userTokenRequest = await request(server)
+		await userController.createUser(adminSchema);
+		const tokenRequest = await request(server)
 			.post("/api/auth")
 			.type("json")
-			.send({ email: userSchema.email, password: userSchema.password });
-		userToken = userTokenRequest.res.text;
+			.send(login);
+
+		token = tokenRequest.res.text;
 	});
 
 	afterEach(async () => {
@@ -44,15 +40,15 @@ describe("Users", () => {
 	const executeMe = () => {
 		return request(server)
 			.get("/api/users/me")
-			.set("x-auth-token", userToken)
+			.set("x-auth-token", token)
 			.send();
 	};
 
 	const executeCreation = () => {
 		return request(server)
 			.post("/api/users/")
-			.set("x-auth-token", adminToken)
-			.send(newUserSchema);
+			.set("x-auth-token", token)
+			.send(userSchema);
 	};
 
 	describe("/me", () => {
@@ -63,14 +59,14 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if invalid token is provided", async () => {
-			userToken = "";
+			token = "";
 			const result = await executeMe();
 
 			expect(result.status).toBe(401);
 		});
 
 		it("should return a 400 if an token is provided where the user doesn't exists anymore", async () => {
-			userToken =
+			token =
 				"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZGM2ZTNhMDQxNzIzNWMxMThhMzc1ZGYiLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNTczMzE1NDg4fQ.r5iTRau3FuJu0w5YkSDdwttoiQBmdeNerGXC8mXTBw8";
 			const result = await executeMe();
 
@@ -79,14 +75,6 @@ describe("Users", () => {
 	});
 
 	describe("/", () => {
-		it("should be return a 403 if the token is not from an admin user", async () => {
-			adminToken = userToken;
-
-			const result = await executeCreation();
-
-			expect(result.status).toBe(403);
-		});
-
 		it("should return a 200 and the user should be created without admin rights", async () => {
 			const result = await executeCreation();
 			const resBody = JSON.parse(result.res.text);
@@ -94,14 +82,14 @@ describe("Users", () => {
 			const userDb = await User.findOne({ email: resBody.email });
 
 			expect(result.status).toBe(200);
-			expect(resBody).toHaveProperty("name", newUserSchema.name);
-			expect(resBody).toHaveProperty("email", newUserSchema.email);
-			expect(resBody).toHaveProperty("email", newUserSchema.email);
+			expect(resBody).toHaveProperty("name", userSchema.name);
+			expect(resBody).toHaveProperty("email", userSchema.email);
+			expect(resBody).toHaveProperty("email", userSchema.email);
 			expect(userDb.isAdmin).toBe(false);
 		});
 
 		it("should return a 400 if no name is provided", async () => {
-			delete newUserSchema.name;
+			delete userSchema.name;
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -110,7 +98,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if name is empty ", async () => {
-			newUserSchema.name = "";
+			userSchema.name = "";
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -119,7 +107,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if no email is provided", async () => {
-			delete newUserSchema.email;
+			delete userSchema.email;
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -128,7 +116,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if email is empty ", async () => {
-			newUserSchema.email = "";
+			userSchema.email = "";
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -137,7 +125,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if no password is provided", async () => {
-			delete newUserSchema.password;
+			delete userSchema.password;
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -146,7 +134,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if password is empty ", async () => {
-			newUserSchema.password = "";
+			userSchema.password = "";
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -155,7 +143,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if repeat_password is empty ", async () => {
-			newUserSchema.repeat_password = "";
+			userSchema.repeat_password = "";
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -164,7 +152,7 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if repeat_password and password are different ", async () => {
-			newUserSchema.repeat_password = "123456";
+			userSchema.repeat_password = "123456";
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
@@ -173,12 +161,12 @@ describe("Users", () => {
 		});
 
 		it("should return a 400 if user already exists", async () => {
-			newUserSchema = userSchema;
+			userSchema = adminSchema;
 			const result = await executeCreation();
 			const resBody = result.res.text;
 
 			expect(result.status).toBe(400);
-			expect(resBody).toMatch(newUserSchema.email);
+			expect(resBody).toMatch(userSchema.email);
 		});
 	});
 });

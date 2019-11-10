@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const debug = require("debug")("app:usersRoutes");
 const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
 const usersController = require("../controller/users");
 const { User } = require("../models/users");
 
@@ -20,7 +21,7 @@ router.get("/me", auth, (req, res) => {
 		});
 });
 
-router.post("/", auth, (req, res) => {
+router.post("/", [auth, admin], (req, res) => {
 	usersController
 		.createUser(req.body)
 		.then(user => {

@@ -37,6 +37,7 @@ describe("Auth", () => {
 	describe("/auth", () => {
 		it("should return an 200 and a valid login if user exists", async () => {
 			const res = await executeLogin();
+
 			const token = res.res.text;
 			const decoded = jwt.verify(token, config.get("jwtPrivateKey"));
 
