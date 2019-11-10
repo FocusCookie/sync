@@ -75,13 +75,17 @@ describe("Users", () => {
 	});
 
 	describe("/", () => {
-		it("should return a 200 if the user is successfully created", async () => {
+		it("should return a 200 and the user should be created without admin rights", async () => {
 			const result = await executeCreation();
 			const resBody = JSON.parse(result.res.text);
+
+			const userDb = await User.findOne({ email: resBody.email });
 
 			expect(result.status).toBe(200);
 			expect(resBody).toHaveProperty("name", userSchema.name);
 			expect(resBody).toHaveProperty("email", userSchema.email);
+			expect(resBody).toHaveProperty("email", userSchema.email);
+			expect(userDb.isAdmin).toBe(false);
 		});
 
 		it("should return a 400 if no name is provided", async () => {
@@ -154,6 +158,15 @@ describe("Users", () => {
 
 			expect(result.status).toBe(400);
 			expect(resBody).toMatch(/repeat_password/);
+		});
+
+		it("should return a 400 if user already exists", async () => {
+			userSchema = adminSchema;
+			const result = await executeCreation();
+			const resBody = result.res.text;
+
+			expect(result.status).toBe(400);
+			expect(resBody).toMatch(userSchema.email);
 		});
 	});
 });
