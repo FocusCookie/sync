@@ -14,34 +14,24 @@ User.findOne({ email: "admin@app.com" }).then(exists => {
 			isAdmin: true
 		};
 
-		User.find({ email: admin.email })
-			.then(existingAdmin => {
-				if (existingAdmin.length !== 0) {
-					reject(`${user.email} is already registered.`);
-				} else {
-					const newAdmin = new User(admin);
+		const newAdmin = new User(admin);
 
-					bcrypt.genSalt(10).then(salt => {
-						bcrypt.hash(newAdmin.password, salt).then(hashedPassword => {
-							newAdmin.password = hashedPassword;
+		bcrypt.genSalt(10).then(salt => {
+			bcrypt.hash(newAdmin.password, salt).then(hashedPassword => {
+				newAdmin.password = hashedPassword;
 
-							newAdmin
-								.save()
-								.then(result => {
-									debug(`User with email ${newAdmin.email} created`);
-									debug(result);
-								})
-								.catch(err => {
-									debug("Error while creating user");
-									debug(err);
-								});
-						});
+				newAdmin
+					.save()
+					.then(result => {
+						debug(`User with email ${newAdmin.email} created`);
+						debug(result);
+					})
+					.catch(err => {
+						debug("Error while creating user");
+						debug(err);
 					});
-				}
-			})
-			.catch(err => {
-				throw new Error(err);
 			});
+		});
 	} else {
 		debug("Admin email - admin@app.com");
 	}
