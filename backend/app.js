@@ -7,7 +7,7 @@ const app = express();
 
 require("./startup/config")();
 require("./startup/routes")(app);
-require("./startup/adminAccount");
+require("./startup/adminAccount")();
 
 debugStartup("Application Name: " + config.get("name"));
 debugStartup("Environment: " + config.get("environment"));
