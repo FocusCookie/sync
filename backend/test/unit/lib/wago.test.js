@@ -7,7 +7,7 @@ const expectedResult = [
   { datatype: "8", arti: "4|624|81|8", prgName: "PLC_PRG", varName: "satz" }
 ];
 
-describe("Wago", () => {
+describe("Wago.lib - Unittest ", () => {
   beforeEach(() => {
     visuVars = [
       { _: "4,152,1,0", $: { name: "PLC_PRG.test" } },

@@ -69,6 +69,14 @@ describe("Users", () => {
       expect(result.status).toBe(401);
     });
 
+    it("should return a 401 if no token is provided", async () => {
+      const result = await request(server)
+        .post("/api/users/")
+        .send(newUserSchema);
+
+      expect(result.status).toBe(401);
+    });
+
     it("should return a 400 if an token is provided where the user doesn't exists anymore", async () => {
       userToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZGM2ZTNhMDQxNzIzNWMxMThhMzc1ZGYiLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNTczMzE1NDg4fQ.r5iTRau3FuJu0w5YkSDdwttoiQBmdeNerGXC8mXTBw8";
