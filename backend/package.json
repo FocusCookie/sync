@@ -37,7 +37,9 @@
 		"mongoose": "^5.7.9",
 		"morgan": "^1.9.1",
 		"node-mocks-http": "^1.8.0",
-		"supports-color": "^7.1.0"
+		"stream-string": "^2.0.2",
+		"supports-color": "^7.1.0",
+		"xml2js": "^0.4.22"
 	},
 	"devDependencies": {
 		"jest": "^24.9.0",

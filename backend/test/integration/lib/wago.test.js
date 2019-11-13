@@ -78,4 +78,50 @@ describe("Hardware Needed! - Wago Libary - Integration", () => {
       expect(result[1]).toHaveProperty("files");
     });
   });
+
+  describe("getPlcXmlFileData", () => {
+    it("should return a valid xml data object from a plc with a visu.xml", async () => {
+      plcOne.files = [
+        {
+          name: "plc_visu.xml"
+        },
+        {
+          name: "testpage.xml"
+        }
+      ];
+      const result = await wago.getPlcXmlFileData(plcOne, plcOne.files[0].name);
+
+      expect(result.length).toBe(4);
+      expect(result[0]).toHaveProperty("_");
+      expect(result[0]).toHaveProperty("$");
+      expect(result[0].$).toHaveProperty("name");
+    });
+
+    it("should return an error when no xmL file name is not provided", async () => {
+      await wago
+        .getPlcXmlFileData(plcOne)
+        .then()
+        .catch(err => {
+          expect(err.message).toMatch(/No XML passed/);
+        });
+    });
+
+    it("should return an error when the xml file name is empty", async () => {
+      await wago
+        .getPlcXmlFileData(plcOne, "")
+        .then()
+        .catch(err => {
+          expect(err.message).toMatch(/No XML passed/);
+        });
+    });
+
+    it("should return an error when passed file is not an xml", async () => {
+      await wago
+        .getPlcXmlFileData(plcOne, "a.js")
+        .then()
+        .catch(err => {
+          expect(err.message).toMatch(/Invalid XML file./);
+        });
+    });
+  });
 });

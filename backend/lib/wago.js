@@ -2,6 +2,8 @@ const findDevices = require("local-devices");
 const ModbusTcpClient = require("modbusjs").ModbusTcpClient;
 const debugModbus = require("debug")("app:modbus");
 const FTP = require("ftp");
+const ss = require("stream-string");
+const parseString = require("xml2js").parseString;
 
 // Find all local waog devices in the network
 function find() {
@@ -25,6 +27,7 @@ function find() {
   });
 }
 
+// Read out the plc information such as article number and connected modules
 function getPlcInformation(plc) {
   return new Promise((resolve, reject) => {
     let plcInformations = plc;
@@ -78,6 +81,7 @@ function getPlcInformation(plc) {
   });
 }
 
+// Get all available PLC`s in the network with their article number and modules
 function getPlcs() {
   return new Promise((resolve, reject) => {
     // find all the Wago PLCs in the network
@@ -93,6 +97,7 @@ function getPlcs() {
   });
 }
 
+// read the available XML files from a controller, return the filesnames not the content
 function readPlcXmls(plc) {
   return new Promise((resolve, reject) => {
     var ftpClient = new FTP();
@@ -126,6 +131,7 @@ function readPlcXmls(plc) {
   });
 }
 
+// read the available XML files from a all plcs, return the filesnames not the content
 function readAllPlcsXmls(plcs) {
   return new Promise((resolve, reject) => {
     // find all the Wago PLCs in the network
@@ -135,13 +141,7 @@ function readAllPlcsXmls(plcs) {
   });
 }
 
-const visuVarsObject = [
-  { _: "4,152,1,0", $: { name: "PLC_PRG.test" } },
-  { _: "4,146,2,1", $: { name: "PLC_PRG.lauf" } },
-  { _: "4,156,4,6", $: { name: "PLC_PRG.zahl" } },
-  { _: "4,624,81,8", $: { name: "PLC_PRG.satz" } }
-];
-
+// translate xml visu paramter into an object which include the arti adress for the endpoint
 function generateArtiAdresses(xmlVisuVars) {
   const noArtiAdress = function(item) {
     return !item.hasOwnProperty("_");
@@ -173,9 +173,71 @@ function generateArtiAdresses(xmlVisuVars) {
   }
 }
 
+// Get a specific xml file from a plc and check if the files has a visu var list
+function getPlcXmlFileData(plc, xmlFile) {
+  return new Promise((resolve, reject) => {
+    if (!xmlFile) {
+      reject(new Error("No XML passed."));
+    }
+
+    if (xmlFile.search(".xml") === -1) {
+      reject(new Error("Invalid XML file."));
+    } else {
+      var ftpClient = new FTP();
+      ftpClient.connect({
+        host: plc.ip,
+        port: 21,
+        user: plc.user,
+        password: plc.password
+      });
+      ftpClient.on("ready", function() {
+        ftpClient.get("PLC/" + xmlFile, function(err, stream) {
+          if (err) {
+            reject(
+              new Error("Something broke while receiving XML Data via ftp.")
+            );
+          } else {
+            stream.once("close", function() {
+              ftpClient.end();
+            });
+            // use stream-string to convert the stream in a string var
+            ss(stream)
+              .then(data => {
+                // Check if the XML File has a variablelist entry and only resolve this list
+                parseString(data, function(err, result) {
+                  if (err) {
+                    reject(
+                      new Error(
+                        "Something broke while conerting data stram into object."
+                      )
+                    );
+                  } else {
+                    // check if visu vars are available or not
+                    if (result.visualisation.hasOwnProperty("variablelist")) {
+                      resolve(result.visualisation.variablelist[0].variable);
+                    } else {
+                      reject(new Error("No variables found."));
+                    }
+                  }
+                });
+              })
+              .catch(err => {
+                // stream emitted an error event (err), so the promise from stream-string was rejected
+                reject(
+                  new Error("Something broke while streaming data - " + err)
+                );
+              });
+          }
+        });
+      });
+    }
+  });
+}
+
 module.exports.find = find;
 module.exports.getPlcInformation = getPlcInformation;
 module.exports.getPlcs = getPlcs;
 module.exports.readPlcXmls = readPlcXmls;
 module.exports.readAllPlcsXmls = readAllPlcsXmls;
 module.exports.generateArtiAdresses = generateArtiAdresses;
+module.exports.getPlcXmlFileData = getPlcXmlFileData;

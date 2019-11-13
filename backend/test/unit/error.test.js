@@ -1,7 +1,7 @@
 const errorMiddleware = require("../../middleware/error");
 const httpMocks = require("node-mocks-http");
 
-describe("auth unittest", () => {
+describe("error middleware unittest", () => {
   beforeEach(() => {
     res = httpMocks.createResponse();
   });
