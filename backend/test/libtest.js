@@ -35,4 +35,7 @@ const plc = {
   ]
 };
 
-wago.getAllPlcsWithVisuVars([plc]).then(res => console.log(res));
+wago
+  .getVisuVarsFromAllPlcs(controller)
+  .then(res => console.log(res[1].visuVars))
+  .catch(err => console.log(err));

@@ -68,7 +68,7 @@ describe("Hardware Needed! - Wago Libary - Integration", () => {
     });
   });
 
-  describe("readPlcXmls", () => {
+  describe("readAllPlcsXmls", () => {
     it("should add the files property with the readed xml files into the given plcs", async () => {
       const plcs = [plcOne, plcTwo];
       const result = await wago.readAllPlcsXmls(plcs);
@@ -150,6 +150,38 @@ describe("Hardware Needed! - Wago Libary - Integration", () => {
       expect(result.visuVars[0]).toHaveProperty("_");
       expect(result.visuVars[0]).toHaveProperty("$");
       expect(result.visuVars[0].$).toHaveProperty("name");
+    });
+  });
+
+  describe("getVisuVarsFromAllPlcs", () => {
+    it("should return the PLCs with the visuVars property", async () => {
+      wago.getVisuVarsFromAllPlcs([plcOne, plcTwo]).then(result => {
+        expect(result.length).toBe(2);
+        expect(result[0]).toHaveProperty("visuVars");
+        expect(result[1]).toHaveProperty("visuVars");
+        expect(result[0].visuVars[0]).toHaveProperty("datatype");
+        expect(result[0].visuVars[0]).toHaveProperty("arti");
+        expect(result[0].visuVars[0]).toHaveProperty("prgName");
+        expect(result[0].visuVars[0]).toHaveProperty("varName");
+      });
+    });
+
+    it("should return an error when no plcs array is passed", async () => {
+      wago
+        .getVisuVarsFromAllPlcs()
+        .then()
+        .catch(err => {
+          expect(err.message).toMatch(/No PLCS Array passed/);
+        });
+    });
+
+    it("should return an error when the plcs is not an array", async () => {
+      wago
+        .getVisuVarsFromAllPlcs(1)
+        .then()
+        .catch(err => {
+          expect(err.message).toMatch(/Passed PLCS are not an array/);
+        });
     });
   });
 });
