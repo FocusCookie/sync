@@ -180,7 +180,7 @@ describe("Hardware Needed! - Wago Libary - Integration", () => {
         .getVisuVarsFromAllPlcs(1)
         .then()
         .catch(err => {
-          expect(err.message).toMatch(/Passed PLCS are not an array/);
+          expect(err.message).toMatch(/Passed PLCS is not an array/);
         });
     });
   });
