@@ -124,6 +124,15 @@ function readPlcXmls(plc) {
               return file.name;
             }
           });
+
+          // remove useless information about the file
+          let result = [];
+          plc.files.forEach(item => {
+            result.push({ name: item.name, size: item.size });
+          });
+
+          plc.files = result;
+
           resolve(plc);
         }
       });
@@ -234,6 +243,26 @@ function getPlcXmlFileData(plc, xmlFile) {
   });
 }
 
+// get all the available visu vars from a given plc
+function getAllPlcXmlData(plc) {
+  return new Promise((resolve, reject) => {
+    const actions = plc.files.map(file => {
+      return this.getPlcXmlFileData(plc, file.name);
+    });
+    let allResults = Promise.all(actions);
+    allResults
+      .then(res => {
+        let allVisuVars = [];
+        res.forEach(visuPage => {
+          visuPage.forEach(visuVar => allVisuVars.push(visuVar));
+        });
+        plc["visuVars"] = allVisuVars;
+        resolve(plc);
+      })
+      .catch(err => reject(err));
+  });
+}
+
 module.exports.find = find;
 module.exports.getPlcInformation = getPlcInformation;
 module.exports.getPlcs = getPlcs;
@@ -241,3 +270,4 @@ module.exports.readPlcXmls = readPlcXmls;
 module.exports.readAllPlcsXmls = readAllPlcsXmls;
 module.exports.generateArtiAdresses = generateArtiAdresses;
 module.exports.getPlcXmlFileData = getPlcXmlFileData;
+module.exports.getAllPlcXmlData = getAllPlcXmlData;

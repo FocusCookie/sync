@@ -124,4 +124,32 @@ describe("Hardware Needed! - Wago Libary - Integration", () => {
         });
     });
   });
+
+  describe("getAllPlcXmlFiles", () => {
+    it("should return an plc object with available visuVars property as converted arti object", async () => {
+      const controller = {
+        name: "750-831",
+        ip: "192.168.1.4",
+        mac: "00:30:de:0a:77:2b",
+        user: "admin",
+        password: "wago",
+        files: [
+          {
+            name: "plc_visu.xml"
+          },
+          {
+            name: "testpage.xml"
+          }
+        ]
+      };
+
+      const result = await wago.getAllPlcXmlData(controller);
+
+      expect(result).toHaveProperty("visuVars");
+      expect(result.visuVars.length).toBe(5);
+      expect(result.visuVars[0]).toHaveProperty("_");
+      expect(result.visuVars[0]).toHaveProperty("$");
+      expect(result.visuVars[0].$).toHaveProperty("name");
+    });
+  });
 });
