@@ -140,7 +140,7 @@ function readPlcXmls(plc) {
   });
 }
 
-// read the available XML files from a all plcs, return the filesnames not the content
+// returns the plcs with available XML files
 function readAllPlcsXmls(plcs) {
   return new Promise((resolve, reject) => {
     // find all the Wago PLCs in the network
@@ -247,7 +247,7 @@ function getPlcXmlFileData(plc, xmlFile) {
 function getAllPlcXmlData(plc) {
   return new Promise((resolve, reject) => {
     const actions = plc.files.map(file => {
-      return this.getPlcXmlFileData(plc, file.name);
+      return getPlcXmlFileData(plc, file.name);
     });
     let allResults = Promise.all(actions);
     allResults
@@ -263,6 +263,49 @@ function getAllPlcXmlData(plc) {
   });
 }
 
+function getVisuVarsFromAllPlcs(plcs) {
+  return new Promise((resolve, reject) => {
+    if (!plcs) {
+      reject(new Error("No PLCS Array passed."));
+    } else {
+      if (!Array.isArray(plcs)) {
+        reject(new Error("Passed PLCS is not an array."));
+      } else {
+        readAllPlcsXmls(plcs)
+          .then(plcsWithFiles => {
+            const actionGetXmlData = plcsWithFiles.map(getAllPlcXmlData);
+            let executeGetXmlData = Promise.all(actionGetXmlData);
+            executeGetXmlData
+              .then(plcsWithFilesData => {
+                const result = plcsWithFilesData.map(element => {
+                  element.visuVars = generateArtiAdresses(element.visuVars);
+                  return element;
+                });
+
+                resolve(result);
+              })
+              .catch(err => {
+                reject(
+                  new Error(
+                    "Something broke while getting XML data from PLCS",
+                    err
+                  )
+                );
+              });
+          })
+          .catch(err => {
+            reject(
+              new Error(
+                "Somethin broke while reading XML file names from PLCS",
+                err
+              )
+            );
+          });
+      }
+    }
+  });
+}
+
 module.exports.find = find;
 module.exports.getPlcInformation = getPlcInformation;
 module.exports.getPlcs = getPlcs;
@@ -271,3 +314,4 @@ module.exports.readAllPlcsXmls = readAllPlcsXmls;
 module.exports.generateArtiAdresses = generateArtiAdresses;
 module.exports.getPlcXmlFileData = getPlcXmlFileData;
 module.exports.getAllPlcXmlData = getAllPlcXmlData;
+module.exports.getVisuVarsFromAllPlcs = getVisuVarsFromAllPlcs;
