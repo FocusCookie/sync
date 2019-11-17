@@ -35,6 +35,7 @@ describe("Wago API integration test", () => {
         .send();
 
       expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Access denied/);
     });
   });
 });
