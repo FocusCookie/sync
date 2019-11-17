@@ -1,5 +1,6 @@
 {
-	"jwtPrivateKey": "wagoGW_jwtPrivateKey",
-	"adminPassword": "wagoGW_adminPassword",
-	"adminEmail": "wagoGW_adminEmail"
+  "jwtPrivateKey": "wagoGW_jwtPrivateKey",
+  "adminPassword": "wagoGW_adminPassword",
+  "adminEmail": "wagoGW_adminEmail",
+  "openSslPassphrase": "wagoGW_openSslPassphrase"
 }

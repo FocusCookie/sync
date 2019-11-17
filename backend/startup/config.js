@@ -6,4 +6,9 @@ module.exports = function() {
       "jwtPrivateKey is not defined! Please setup the ENV variable first."
     );
   }
+  if (!config.get("openSslPassphrase")) {
+    throw new Error(
+      "open SSL pasphrase is not defined! Please setup the ENV variable first."
+    );
+  }
 };
