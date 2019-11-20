@@ -1,9 +1,6 @@
-const bcrypt = require("bcrypt");
 const request = require("supertest");
 const { User } = require("../../models/users");
 const userController = require("../../controller/users");
-const config = require("config");
-const jwt = require("jsonwebtoken");
 
 let userSchema;
 let adminToken;

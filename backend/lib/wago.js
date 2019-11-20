@@ -4,6 +4,7 @@ const debugModbus = require("debug")("app:modbus");
 const FTP = require("ftp");
 const ss = require("stream-string");
 const parseString = require("xml2js").parseString;
+const debug = require("debug")("app:wagoLib");
 
 // Find all local waog devices in the network
 function find() {
@@ -251,56 +252,65 @@ function getAllPlcXmlData(plc) {
     });
     let allResults = Promise.all(actions);
     allResults
-      .then(res => {
-        let allVisuVars = [];
-        res.forEach(visuPage => {
-          visuPage.forEach(visuVar => allVisuVars.push(visuVar));
+      .then(filesWithVisuVarArray => {
+        filesWithVisuVarArray.forEach((visuVarArray, index) => {
+          plc.files[index].variables = generateArtiAdresses(visuVarArray);
+          resolve(plc);
         });
-        plc["visuVars"] = allVisuVars;
         resolve(plc);
       })
       .catch(err => reject(err));
   });
 }
 
-function getVisuVarsFromAllPlcs(plcs) {
+function getPlcDetails(plc) {
   return new Promise((resolve, reject) => {
-    if (!plcs) {
-      reject(new Error("No PLCS Array passed."));
+    if (!plc) {
+      reject(new Error("Invalid PLC"));
     } else {
-      if (!Array.isArray(plcs)) {
-        reject(new Error("Passed PLCS is not an array."));
-      } else {
-        readAllPlcsXmls(plcs)
-          .then(plcsWithFiles => {
-            const actionGetXmlData = plcsWithFiles.map(getAllPlcXmlData);
-            let executeGetXmlData = Promise.all(actionGetXmlData);
-            executeGetXmlData
-              .then(plcsWithFilesData => {
-                const result = plcsWithFilesData.map(element => {
-                  element.visuVars = generateArtiAdresses(element.visuVars);
-                  return element;
-                });
+      if (
+        plc.hasOwnProperty("ip") &&
+        plc.hasOwnProperty("user") &&
+        plc.hasOwnProperty("password")
+      ) {
+        if (plc.user === "" || plc.password === "") {
+          reject(new Error("Invalid PLC"));
+        } else {
+          getPlcInformation(plc)
+            .then(result => {
+              plc = result;
 
-                resolve(result);
-              })
-              .catch(err => {
-                reject(
-                  new Error(
-                    "Something broke while getting XML data from PLCS",
+              readPlcXmls(plc)
+                .then(plcXml => {
+                  getAllPlcXmlData(plcXml)
+                    .then(result => {
+                      delete result.user;
+                      delete result.password;
+
+                      resolve(result);
+                    })
+                    .catch(err =>
+                      reject(
+                        new Error(
+                          "Something broke while receiving XML data.",
+                          err
+                        )
+                      )
+                    );
+                })
+                .catch(err =>
+                  reject(
+                    "Something broke while reading XML files from PLC.",
                     err
                   )
                 );
-              });
-          })
-          .catch(err => {
-            reject(
-              new Error(
-                "Somethin broke while reading XML file names from PLCS",
-                err
-              )
+            })
+            .catch(err =>
+              reject("Something broke while receiving PLC Information.", err)
             );
-          });
+        }
+      } else {
+        reject(new Error("Invalid PLC"));
       }
     }
   });
@@ -314,4 +324,4 @@ module.exports.readAllPlcsXmls = readAllPlcsXmls;
 module.exports.generateArtiAdresses = generateArtiAdresses;
 module.exports.getPlcXmlFileData = getPlcXmlFileData;
 module.exports.getAllPlcXmlData = getAllPlcXmlData;
-module.exports.getVisuVarsFromAllPlcs = getVisuVarsFromAllPlcs;
+module.exports.getPlcDetails = getPlcDetails;
