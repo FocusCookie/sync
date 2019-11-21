@@ -7,6 +7,8 @@ let server;
 let token;
 let plc;
 let plcWithDetails;
+let storedPlc;
+let storedPlcId;
 
 describe("Wago API integration test", () => {
   beforeEach(async () => {
@@ -97,6 +99,13 @@ describe("Wago API integration test", () => {
       .get("/api/wago/")
       .set("x-auth-token", token)
       .send();
+  };
+
+  const executePut = () => {
+    return request(server)
+      .put("/api/wago/" + storedPlcId)
+      .set("x-auth-token", token)
+      .send(plcWithDetails);
   };
 
   describe("GET /search - Search for wago PLC's in the network", () => {
@@ -229,7 +238,7 @@ describe("Wago API integration test", () => {
     it("should return the stored plc from the database", async () => {
       const dbPlc = await wagoController.createWago(plcWithDetails);
       const result = await executeGetWagos();
-      console.log(typeof dbPlc._id);
+
       expect(result.status).toBe(200);
       expect(result.body[0]._id).toMatch(dbPlc._id.toString());
     });
@@ -363,6 +372,216 @@ describe("Wago API integration test", () => {
 
       expect(result.status).toBe(400);
       expect(result.error.text).toMatch(/must be an array/);
+    });
+  });
+
+  describe("GET /:id - return a specific PLC from the DB based on the id", () => {
+    it("should return an 401 if no token is provided", async () => {
+      const result = await request(server)
+        .get("/api/wago/1234")
+        .send();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Access denied/);
+    });
+
+    it("should return an 401 if token is empty", async () => {
+      const result = await request(server)
+        .get("/api/wago/1234")
+        .set("x-auth-token", "")
+        .send();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Access denied/);
+    });
+
+    it("should return an 401 if token is invalid", async () => {
+      const result = await request(server)
+        .get("/api/wago/1234")
+        .set("x-auth-token", "a")
+        .send();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Invalid token/i);
+    });
+
+    it("should return an 400 if id is invalid", async () => {
+      const result = await request(server)
+        .get("/api/wago/123")
+        .set("x-auth-token", token)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid ID/i);
+    });
+
+    it("should return an 200 if no id is valid and PLC is in DB", async () => {
+      const dbPlc = await wagoController.createWago(plcWithDetails);
+
+      const result = await request(server)
+        .get("/api/wago/" + dbPlc._id.toString())
+        .set("x-auth-token", token)
+        .send();
+
+      expect(result.status).toBe(200);
+      expect(result.body._id).toMatch(dbPlc._id.toString());
+    });
+  });
+
+  describe("PUT /:id - return changed plc", () => {
+    beforeEach(async () => {
+      storedPlc = await wagoController.createWago(plcWithDetails);
+      storedPlcId = storedPlc._id.toString();
+    });
+
+    it("should return an 401 if no token is provided", async () => {
+      const result = await request(server)
+        .put("/api/wago/" + storedPlc._id.toString())
+        .send();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Access denied/);
+    });
+
+    it("should return an 401 if token is empty", async () => {
+      token = "";
+      const result = await executePut();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Access denied/);
+    });
+
+    it("should return an 401 if token is invalid", async () => {
+      token = "a";
+      const result = await executePut();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Invalid token/i);
+    });
+
+    it("should return an 400 if id is invalid", async () => {
+      storedPlcId = "123";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid ID/i);
+    });
+
+    it("should return a 400 if ip is not provided in the plc object", async () => {
+      delete plcWithDetails.ip;
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/"ip" is required/);
+    });
+
+    it("should return a 400 if ip is empty in the plc object", async () => {
+      plcWithDetails.ip = "";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/empty/i);
+    });
+
+    it("should return an 400 min error if ip less than 7 digits", async () => {
+      plcWithDetails.ip = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be at least/);
+    });
+
+    it("should return an 400 max error if ip is longer than 15 digits", async () => {
+      plcWithDetails.ip = "1234567890-123456";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be less than or equal to/);
+    });
+
+    it("should return an 400 min error if name less than 3 digits", async () => {
+      plcWithDetails.name = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be at least/);
+    });
+
+    it("should return an 400 error when name has more than 255 chars", async () => {
+      plcWithDetails.name = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+    });
+
+    it("should return an 400 min error if mac less than 17 digits", async () => {
+      plcWithDetails.mac = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be at least/);
+    });
+
+    it("should return an 400 max error if mac is longer than 17 digits", async () => {
+      plcWithDetails.mac = "1234567890-1234567";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be less than or equal to/);
+    });
+
+    it("should return an 400 min error if articleNumber less than 7 digits", async () => {
+      plcWithDetails.articleNumber = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be at least/);
+    });
+
+    it("should return an 400 max error if articleNumber is longer than 50 digits", async () => {
+      plcWithDetails.articleNumber =
+        "1234567890-1234567890-1234567890-1234567890-1234567890";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be less than or equal to/);
+    });
+
+    it("should return an 400 validation error if modules is not an array", async () => {
+      plcWithDetails.modules = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be an array/);
+    });
+
+    it("should return an 400 validation error if files is not an array", async () => {
+      plcWithDetails.files = "1";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be an array/);
+    });
+
+    it("should return an 400 if given plc has an id parameter", async () => {
+      plcWithDetails._id = "123";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid PLC Object - _id paramter/);
+    });
+
+    it("should return an 400 if new IP is already used in database for another plc", async () => {
+      // first DB entry is with ip .4
+      // create a second db entry with a different ip
+      plcWithDetails.ip = "192.168.1.100";
+      await wagoController.createWago(plcWithDetails);
+
+      // try to first entry ip to the second entry ip
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/already registered/i);
     });
   });
 });

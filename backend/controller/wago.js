@@ -39,3 +39,42 @@ module.exports.createWago = function(plc) {
       });
   });
 };
+
+module.exports.editWago = function(id, plc) {
+  return new Promise((resolve, reject) => {
+    const validation = validate(plc);
+
+    if (validation.error) return reject(validation);
+
+    Wago.findOne({ _id: id }).then(existingPlc => {
+      if (!existingPlc) {
+        reject(`No PLC found with ID: ${id}`);
+      } else {
+        Wago.findOne({ ip: plc.ip })
+          .then(existingIp => {
+            if (existingIp) {
+              reject(`${plc.ip} is already registered.`);
+            } else {
+              Wago.findOneAndUpdate({ _id: id }, plc)
+                .then(updated => {
+                  resolve(updated);
+                })
+                .catch(err => {
+                  debug("Something broke while updating PLC", err);
+                  reject(new Error("Something broke while updating PLC"));
+                });
+            }
+          })
+          .catch(err => {
+            debug(err);
+            reject(
+              new Error(
+                "Something broke while storing Wago PLC in database.",
+                err
+              )
+            );
+          });
+      }
+    });
+  });
+};
