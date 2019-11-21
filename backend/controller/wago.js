@@ -1,5 +1,6 @@
 const debug = require("debug")("app:wagoController");
 const { Wago, validate } = require("../models/wago");
+var objectID = require("mongodb").ObjectID;
 
 module.exports.createWago = function(plc) {
   return new Promise((resolve, reject) => {
@@ -42,39 +43,78 @@ module.exports.createWago = function(plc) {
 
 module.exports.editWago = function(id, plc) {
   return new Promise((resolve, reject) => {
-    const validation = validate(plc);
+    if (objectID.isValid(id)) {
+      const validation = validate(plc);
 
-    if (validation.error) return reject(validation);
-
-    Wago.findOne({ _id: id }).then(existingPlc => {
-      if (!existingPlc) {
-        reject(`No PLC found with ID: ${id}`);
+      if (validation.error) {
+        reject(validation);
       } else {
-        Wago.findOne({ ip: plc.ip })
-          .then(existingIp => {
-            if (existingIp) {
-              reject(`${plc.ip} is already registered.`);
-            } else {
-              Wago.findOneAndUpdate({ _id: id }, plc)
-                .then(updated => {
-                  resolve(updated);
-                })
-                .catch(err => {
-                  debug("Something broke while updating PLC", err);
-                  reject(new Error("Something broke while updating PLC"));
-                });
-            }
-          })
-          .catch(err => {
-            debug(err);
-            reject(
-              new Error(
-                "Something broke while storing Wago PLC in database.",
-                err
-              )
-            );
-          });
+        Wago.findOne({ _id: id }).then(existingPlc => {
+          debug(existingPlc);
+          if (!existingPlc) {
+            reject(new Error(`No PLC found with ID: ${id}`));
+          } else {
+            Wago.findOne({ ip: plc.ip })
+              .then(existingIp => {
+                if (existingIp) {
+                  reject(new Error(`${plc.ip} is already registered.`));
+                } else {
+                  Wago.findOneAndUpdate({ _id: id }, plc)
+                    .then(update => {
+                      update.save().then(() => {
+                        Wago.findOne({ _id: id }).then(result => {
+                          resolve(result);
+                        });
+                      });
+                    })
+                    .catch(err => {
+                      debug("Something broke while updating PLC", err);
+                      reject(new Error("Something broke while updating PLC"));
+                    });
+                }
+              })
+              .catch(err => {
+                debug(err);
+                reject(
+                  new Error(
+                    "Something broke while storing Wago PLC in database.",
+                    err
+                  )
+                );
+              });
+          }
+        });
       }
-    });
+    } else {
+      reject(new Error("Invalid ID"));
+    }
+  });
+};
+
+module.exports.deleteWago = function(id) {
+  return new Promise((resolve, reject) => {
+    if (objectID.isValid(id)) {
+      Wago.findOne({ _id: id }).then(existingPlc => {
+        debug(existingPlc);
+        if (!existingPlc) {
+          reject(new Error(`No PLC found with ID: ${id}`));
+        } else {
+          Wago.deleteOne({ _id: id })
+            .then(() => {
+              resolve(`Successfully deleted PLC with ID: ${id}`);
+            })
+            .catch(err => {
+              reject(
+                new Error(
+                  `Something broke while deleting PLC with ID: ${id}`,
+                  err
+                )
+              );
+            });
+        }
+      });
+    } else {
+      reject(new Error("Invalid ID"));
+    }
   });
 };

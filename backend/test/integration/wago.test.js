@@ -108,7 +108,14 @@ describe("Wago API integration test", () => {
       .send(plcWithDetails);
   };
 
-  describe("GET /search - Search for wago PLC's in the network", () => {
+  const executeDelete = () => {
+    return request(server)
+      .delete("/api/wago/" + storedPlc._id)
+      .set("x-auth-token", token)
+      .send();
+  };
+
+  describe("GET /search", () => {
     it("should return two plcs with ip, name and mac", async () => {
       const result = await request(server)
         .get("/api/wago/search")
@@ -132,7 +139,7 @@ describe("Wago API integration test", () => {
     });
   });
 
-  describe("POST /details - return details about an PLC in the network", () => {
+  describe("POST /details", () => {
     it("should return a 401 if token is empty", async () => {
       token = "";
 
@@ -224,7 +231,7 @@ describe("Wago API integration test", () => {
     });
   });
 
-  describe("GET / - return stored PLC from database", () => {
+  describe("GET /", () => {
     afterEach(async () => {
       await Wago.deleteMany({});
     });
@@ -244,7 +251,7 @@ describe("Wago API integration test", () => {
     });
   });
 
-  describe("POST / - to store PLC in database", () => {
+  describe("POST /", () => {
     it("should return a 200 and the given plc including _id", async () => {
       const result = await executeStorePlc();
 
@@ -375,7 +382,7 @@ describe("Wago API integration test", () => {
     });
   });
 
-  describe("GET /:id - return a specific PLC from the DB based on the id", () => {
+  describe("GET /:id", () => {
     it("should return an 401 if no token is provided", async () => {
       const result = await request(server)
         .get("/api/wago/1234")
@@ -415,7 +422,7 @@ describe("Wago API integration test", () => {
       expect(result.error.text).toMatch(/Invalid ID/i);
     });
 
-    it("should return an 200 if no id is valid and PLC is in DB", async () => {
+    it("should return an 200 if  id is valid and PLC is in DB", async () => {
       const dbPlc = await wagoController.createWago(plcWithDetails);
 
       const result = await request(server)
@@ -426,9 +433,19 @@ describe("Wago API integration test", () => {
       expect(result.status).toBe(200);
       expect(result.body._id).toMatch(dbPlc._id.toString());
     });
+
+    it("should return an 400 id doesn't exist in the database", async () => {
+      const result = await request(server)
+        .get("/api/wago/" + "5dd65bccd4387dc776AAAAAA")
+        .set("x-auth-token", token)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/No PLC found /i);
+    });
   });
 
-  describe("PUT /:id - return changed plc", () => {
+  describe("PUT /:id", () => {
     beforeEach(async () => {
       storedPlc = await wagoController.createWago(plcWithDetails);
       storedPlcId = storedPlc._id.toString();
@@ -465,6 +482,14 @@ describe("Wago API integration test", () => {
 
       expect(result.status).toBe(400);
       expect(result.error.text).toMatch(/Invalid ID/i);
+    });
+
+    it("should return an 400 id doesn't exist in the database", async () => {
+      storedPlcId = "5dd65bccd4387dc776cd3215";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/No PLC found /i);
     });
 
     it("should return a 400 if ip is not provided in the plc object", async () => {
@@ -582,6 +607,63 @@ describe("Wago API integration test", () => {
 
       expect(result.status).toBe(400);
       expect(result.error.text).toMatch(/already registered/i);
+    });
+  });
+
+  describe("DELETE /:id", () => {
+    beforeEach(async () => {
+      storedPlc = await wagoController.createWago(plcWithDetails);
+    });
+
+    it("should return a 200 and the given plc including _id", async () => {
+      const result = await executeDelete();
+
+      expect(result.status).toBe(200);
+      expect(result.text).toMatch(/Successfully/i);
+    });
+
+    it("should return a 401 if an invalid token is provided", async () => {
+      token = "";
+      const result = await executeDelete();
+
+      expect(result.status).toBe(401);
+    });
+
+    it("should return a 401 if no token is provided", async () => {
+      token = "";
+      const result = await request(server)
+        .delete("/api/wago/" + storedPlc._id)
+        .send();
+
+      expect(result.status).toBe(401);
+    });
+
+    it("should return an 400 if id is invalid", async () => {
+      const result = await request(server)
+        .delete("/api/wago/" + "123")
+        .set("x-auth-token", token)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid ID/i);
+    });
+
+    it("should return an 400 id doesn't exist in the database", async () => {
+      storedPlc._id = "5dd65bccd4387dc776cdAAAA";
+      const result = await executeDelete();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/No PLC found /i);
+    });
+
+    it("should return an 400 id doesn't exist in the database", async () => {
+      const result = await request(server)
+        .delete("/api/wago/" + "5dd65bccd4387dc776AAAAAA")
+        .set("x-auth-token", token)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/No PLC found /i);
     });
   });
 });

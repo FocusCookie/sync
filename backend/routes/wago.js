@@ -50,6 +50,7 @@ router.get("/:id", auth, (req, res) => {
   if (objectID.isValid(req.params.id)) {
     Wago.findOne({ _id: req.params.id })
       .then(result => {
+        debug(result);
         if (!result) {
           res.status(400).send("No PLC found with the id " + req.params.id);
         } else {
@@ -67,25 +68,36 @@ router.get("/:id", auth, (req, res) => {
 
 // returns a single PLC from DB based on the id
 router.put("/:id", auth, (req, res) => {
-  debug("IP CHECK ", req.body.ip);
-  if (objectID.isValid(req.params.id)) {
-    if (req.body._id) {
-      res.status(400).send("Invalid PLC Object - _id paramter");
-    } else {
-      wagoController
-        .editWago(req.params.id, req.body)
-        .then(updated => res.send(updated))
-        .catch(err => {
-          if (err.error) {
-            res.status(400).send(err.error.details[0].message);
-          } else {
-            res.status(400).send(err);
-          }
-        });
-    }
+  if (req.body._id) {
+    res.status(400).send("Invalid PLC Object - _id paramter");
   } else {
-    res.status(400).send("Invalid ID");
+    wagoController
+      .editWago(req.params.id, req.body)
+      .then(updated => res.send(updated))
+      .catch(err => {
+        if (err.error) {
+          res.status(400).send(err.error.details[0].message);
+        } else {
+          res.status(400).send(err.message);
+        }
+      });
   }
+});
+
+// deletes a PLC with given ID from DB
+router.delete("/:id", auth, (req, res) => {
+  wagoController
+    .deleteWago(req.params.id)
+    .then(result => {
+      res.send(result);
+    })
+    .catch(err => {
+      if (err.error) {
+        res.status(400).send(err.error.details[0].message);
+      } else {
+        res.status(400).send(err.message);
+      }
+    });
 });
 
 // store a PLC to the database, with all the details (ip, name, mac, articlenumber, modules, files)
