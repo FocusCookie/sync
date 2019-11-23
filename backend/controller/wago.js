@@ -56,9 +56,7 @@ module.exports.editWago = function(id, plc) {
           } else {
             Wago.findOne({ ip: plc.ip })
               .then(existingIp => {
-                if (existingIp) {
-                  reject(new Error(`${plc.ip} is already registered.`));
-                } else {
+                if (!existingIp) {
                   Wago.findOneAndUpdate({ _id: id }, plc)
                     .then(update => {
                       update.save().then(() => {
@@ -71,6 +69,10 @@ module.exports.editWago = function(id, plc) {
                       debug("Something broke while updating PLC", err);
                       reject(new Error("Something broke while updating PLC"));
                     });
+                } else {
+                  if (existingIp._id.toString() !== id) {
+                    reject(new Error(`${plc.ip} is already registered.`));
+                  }
                 }
               })
               .catch(err => {

@@ -596,6 +596,14 @@ describe("Wago API integration test", () => {
       expect(result.error.text).toMatch(/Invalid PLC Object - _id paramter/);
     });
 
+    it("should return an 400 if id is nor used", async () => {
+      plcWithDetails._id = "5dd914f29eb31a5aacd1AAAA";
+      const result = await executePut();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid PLC Object - _id paramter/);
+    });
+
     it("should return an 400 if new IP is already used in database for another plc", async () => {
       // first DB entry is with ip .4
       // create a second db entry with a different ip

@@ -41,8 +41,34 @@ router.post("/certs", auth, (req, res) => {
     });
 });
 
+router.put("/certs/:id", auth, (req, res) => {
+  awsCertController
+    .editCerts(req.params.id, req.body)
+    .then(result => {
+      res.send(result);
+    })
+    .catch(err => {
+      if (err.error) {
+        res.status(400).send(err.error);
+      } else {
+        res.status(400).send(err.message);
+      }
+    });
+});
+
 router.delete("/certs/:id", auth, (req, res) => {
-  //TODO: integrate deletion
+  awsCertController
+    .deleteCerts(req.params.id)
+    .then(result => {
+      res.send(result);
+    })
+    .catch(err => {
+      if (err.error) {
+        res.status(400).send(err.error.details[0].message);
+      } else {
+        res.status(400).send(err.message);
+      }
+    });
 });
 
 module.exports = router;

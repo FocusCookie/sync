@@ -1,6 +1,7 @@
 const debug = require("debug")("app:awsCertController");
 const { AwsCert, validate } = require("../models/awsCerts");
 const bcrypt = require("bcrypt");
+var objectID = require("mongodb").ObjectID;
 
 module.exports.createCerts = function(certs) {
   return new Promise((resolve, reject) => {
@@ -78,6 +79,107 @@ module.exports.getCerts = function(id) {
   });
 };
 
+module.exports.editCerts = function(id, certs) {
+  return new Promise((resolve, reject) => {
+    if (objectID.isValid(id)) {
+      const validation = validate(certs);
+
+      if (validation.error) {
+        reject(validation);
+      } else {
+        AwsCert.findOne({ _id: id }).then(existingCerts => {
+          if (!existingCerts) {
+            reject(new Error(`No Certs found with ID: ${id}`));
+          } else {
+            AwsCert.findOne({ thingName: certs.thingName })
+              .then(existingThingWithName => {
+                if (existingThingWithName) {
+                  if (existingThingWithName._id.toString() !== id) {
+                    reject(
+                      new Error(`${certs.thingName} is already registered.`)
+                    );
+                  } else {
+                    AwsCert.findOneAndUpdate({ _id: id }, certs)
+                      .then(update => {
+                        update.save().then(() => {
+                          AwsCert.findOne({ _id: id }).then(result => {
+                            resolve(result);
+                          });
+                        });
+                      })
+                      .catch(err => {
+                        debug("Something broke while updating AWS Certs", err);
+                        reject(
+                          new Error(
+                            "Something broke while updating AWS Certs",
+                            err
+                          )
+                        );
+                      });
+                  }
+                } else {
+                  AwsCert.findOneAndUpdate({ _id: id }, certs)
+                    .then(update => {
+                      update.save().then(() => {
+                        AwsCert.findOne({ _id: id }).then(result => {
+                          resolve(result);
+                        });
+                      });
+                    })
+                    .catch(err => {
+                      debug("Something broke while updating AWS Certs", err);
+                      reject(
+                        new Error(
+                          "Something broke while updating AWS Certs",
+                          err
+                        )
+                      );
+                    });
+                }
+              })
+              .catch(err => {
+                debug("id " + id, " ");
+                debug(err);
+                reject(
+                  new Error(
+                    "Something broke while updating AWS Cert in database.",
+                    err
+                  )
+                );
+              });
+          }
+        });
+      }
+    } else {
+      reject(new Error("Invalid ID"));
+    }
+  });
+};
+
 module.exports.deleteCerts = function(id) {
-  //TODO: integrate deletion
+  return new Promise((resolve, reject) => {
+    if (objectID.isValid(id)) {
+      AwsCert.findOne({ _id: id }).then(existingCerts => {
+        debug(existingCerts);
+        if (!existingCerts) {
+          reject(new Error(`No AWS Certs found with ID: ${id}`));
+        } else {
+          AwsCert.deleteOne({ _id: id })
+            .then(() => {
+              resolve(`Successfully deleted AWS Certs with ID: ${id}`);
+            })
+            .catch(err => {
+              reject(
+                new Error(
+                  `Something broke while deleting AWS Certs with ID: ${id}`,
+                  err
+                )
+              );
+            });
+        }
+      });
+    } else {
+      reject(new Error("Invalid ID"));
+    }
+  });
 };

@@ -57,6 +57,20 @@ describe("AWS Routes", () => {
       .send(certSchema);
   };
 
+  const executePutCert = () => {
+    return request(server)
+      .put("/api/aws/certs/" + storedCert._id.toString())
+      .set("x-auth-token", userToken)
+      .send(certSchema);
+  };
+
+  const executeDelete = () => {
+    return request(server)
+      .delete("/api/aws/certs/" + storedCert._id.toString())
+      .set("x-auth-token", userToken)
+      .send();
+  };
+
   describe("GET /certs", () => {
     it("should return an 401 if no token is provided", async () => {
       const result = await request(server)
@@ -401,7 +415,303 @@ describe("AWS Routes", () => {
     });
   });
 
-  describe("DELETE /certs/:id", () => {
-    //TODO: integrate deletion
+  describe("PUT /certs/:id", () => {
+    beforeEach(async () => {
+      certSchema = {
+        thingName: "EDIT 750-831",
+        certificate: `
+  -----BEGIN CERTIFICATE-----
+  EDIT CERTIFICATE CONTENT
+  -----END CERTIFICATE-----
+  `,
+        caChain: `
+  -----BEGIN CERTIFICATE-----
+  EDIT CA CHAIN CONTENT
+  -----END CERTIFICATE-----
+  `,
+        privateKey: `
+  -----BEGIN RSA PRIVATE KEY-----
+  EDIT Private KEY content
+  -----END RSA PRIVATE KEY-----
+  `
+      };
+
+      storedCert = await awsController.createCerts(certSchema);
+    });
+
+    it("should return an 401 if no token is provided", async () => {
+      const result = await request(server)
+        .put("/api/aws/certs/:" + storedCert._id.toString())
+        .send();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/access denied/i);
+    });
+
+    it("should return an 401 if an empty token is provided", async () => {
+      userToken = "";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/access denied/i);
+    });
+
+    it("should return an 401 if an invalid token", async () => {
+      userToken = "a";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Invalid token/i);
+    });
+
+    it("should return an 401 if old token is provided", async () => {
+      userToken = "5dd65bccd4387dc776cdAAAA";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(401);
+      expect(result.error.text).toMatch(/Invalid token/i);
+    });
+
+    it("should return 400 if thingName is missing ", async () => {
+      delete certSchema.thingName;
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is required/i);
+    });
+
+    it("should return 400 if thingName not a string", async () => {
+      certSchema.thingName = 123;
+      const result = await executePostCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be a string/i);
+    });
+
+    it("should return 400 if thingName empty", async () => {
+      certSchema.thingName = "";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is not allowed to be empty/i);
+    });
+
+    it("should return 400 if thingName less than 3 chars", async () => {
+      certSchema.thingName = "a";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/at least 3 characters/i);
+    });
+
+    it("should return 400 if thingName longer than 255 chars", async () => {
+      certSchema.thingName =
+        "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(
+        /less than or equal to 255 characters/i
+      );
+    });
+
+    // CERTIFICATE
+    it("should return 400 if certificate is not provided ", async () => {
+      delete certSchema.certificate;
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is required/i);
+    });
+
+    it("should return 400 if certificate is empty ", async () => {
+      certSchema.certificate = "";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is not allowed to be empty/i);
+    });
+
+    it("should return 400 if certificate is invalid ", async () => {
+      certSchema.certificate = "aaa";
+      const result = await executePostCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return 400 if certificate does not contain BEGIN CERTIFICATE", async () => {
+      certSchema.certificate = "a -----END CERTIFICATE-----";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return 400 if certificate does not contain END CERTIFICATE", async () => {
+      certSchema.certificate = "-----BEGIN CERTIFICATE----- a";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    // CA CHAIN
+    it("should return 400 if caChain is not provided ", async () => {
+      delete certSchema.caChain;
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is required/i);
+    });
+
+    it("should return 400 if caChain is empty ", async () => {
+      certSchema.caChain = "";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is not allowed to be empty/i);
+    });
+
+    it("should return 400 if caChain is invalid ", async () => {
+      certSchema.caChain = "aaa";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return400  if caChain does not contain BEGIN CERTIFICATE", async () => {
+      certSchema.caChain = "a -----END CERTIFICATE-----";
+      const result = await executePostCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return400  if caChain does not contain END CERTIFICATE", async () => {
+      certSchema.caChain = "-----BEGIN CERTIFICATE----- a";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    // CA CHAIN
+    it("should return 400 if privateKey is not provided ", async () => {
+      delete certSchema.privateKey;
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is required/i);
+    });
+
+    it("should return 400 if privateKey is empty ", async () => {
+      certSchema.privateKey = "";
+      const result = await executePostCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is not allowed to be empty/i);
+    });
+
+    it("should return 400 if privateKey is invalid ", async () => {
+      certSchema.privateKey = "aaa";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return400  if privateKey does not contain BEGIN CERTIFICATE", async () => {
+      certSchema.privateKey = "a -----END RSA PRIVATE KEY-----";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return400  if privateKey does not contain END CERTIFICATE", async () => {
+      certSchema.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/invalid/i);
+    });
+
+    it("should return 400 when thingname is already registered", async () => {
+      certSchema.thingName = "750-831";
+      await awsController.createCerts(certSchema);
+      const result = await executePutCert();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/already registered/i);
+    });
+
+    it("should return 200 and the result should contain _id property", async () => {
+      const result = await executePutCert();
+
+      expect(result.status).toBe(200);
+      expect(result.body).toHaveProperty("_id");
+      expect(result.body.thingName).toBe(certSchema.thingName);
+      expect(result.body.certificate).toBe(certSchema.certificate);
+      expect(result.body.caChain).toBe(certSchema.caChain);
+    });
+  });
+
+  describe("DELETE /:id", () => {
+    beforeEach(async () => {
+      storedCert = await awsController.createCerts(certSchema);
+    });
+
+    it("should return a 200 and the deleted certs _id", async () => {
+      const result = await executeDelete();
+
+      expect(result.status).toBe(200);
+      expect(result.text).toMatch(/Successfully/i);
+    });
+
+    it("should return a 401 if an empty token is provided", async () => {
+      userToken = "";
+      const result = await executeDelete();
+
+      expect(result.status).toBe(401);
+    });
+
+    it("should return a 401 if no token is provided", async () => {
+      userToken = "";
+      const result = await request(server)
+        .delete("/api/aws/certs/" + storedCert._id)
+        .send();
+
+      expect(result.status).toBe(401);
+    });
+
+    it("should return an 400 if id is invalid", async () => {
+      const result = await request(server)
+        .delete("/api/aws/certs/" + "123")
+        .set("x-auth-token", userToken)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid ID/i);
+    });
+
+    it("should return an 400 id doesn't exist in the database", async () => {
+      storedCert._id = "5dd65bccd4387dc776cdAAAA";
+      const result = await executeDelete();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/No AWS Certs found /i);
+    });
+
+    it("should return an 400 id doesn't exist in the database", async () => {
+      const result = await request(server)
+        .delete("/api/aws/certs/" + "5dd65bccd4387dc776AAAAAA")
+        .set("x-auth-token", userToken)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/No AWS Certs found /i);
+    });
   });
 });
