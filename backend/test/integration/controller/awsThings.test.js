@@ -1,58 +1,58 @@
-const { AwsCert } = require("../../../models/awsCerts");
-const awsController = require("../../../controller/awsCert");
+const { AwsThing } = require("../../../models/awsThings");
+const awsThingsController = require("../../../controller/awsThings");
 
 let server;
-let testCa;
-let testCert;
-let testKey;
-let certObject;
-let storedCert;
+let testCsChain;
+let testCertificate;
+let testPrivateKey;
+let thingSchema;
+let storedThing;
 
-describe("Wago controller - integration test", () => {
+describe("AWS Things Controller - integration test", () => {
   beforeEach(async () => {
     server = require("../../../app");
-    testCert = `
+    testCertificate = `
 -----BEGIN CERTIFICATE-----
 CERTIFICATE CONTENT
 -----END CERTIFICATE-----
 `;
 
-    testCa = `
+    testCsChain = `
 -----BEGIN CERTIFICATE-----
 CA CHAIN CONTENT
 -----END CERTIFICATE-----
 `;
 
-    testKey = `
+    testPrivateKey = `
 -----BEGIN RSA PRIVATE KEY-----
 Private KEY content
 -----END RSA PRIVATE KEY-----
 `;
 
-    certObject = {
+    thingSchema = {
       thingName: "750-831",
-      certificate: testCert,
-      caChain: testCa,
-      privateKey: testKey
+      certificate: testCertificate,
+      caChain: testCsChain,
+      privateKey: testPrivateKey
     };
   });
 
   afterEach(async () => {
     await server.close();
-    await AwsCert.deleteMany({});
+    await AwsThing.deleteMany({});
   });
 
-  describe("createAwsCert", () => {
-    it("should return the given cert with an db _id property", async () => {
-      await awsController.createCerts(certObject).then(result => {
+  describe("createAwsThing", () => {
+    it("should return the given thing with an db _id property", async () => {
+      await awsThingsController.createThing(thingSchema).then(result => {
         expect(result).toHaveProperty("_id");
       });
     });
 
     it("should return an required error if thingName is missing", async () => {
-      delete certObject.thingName;
-      await awsController
-        .createCerts(certObject)
+      delete thingSchema.thingName;
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -60,9 +60,9 @@ Private KEY content
     });
 
     it("should return an error if thingName not a string", async () => {
-      certObject.thingName = 123;
-      await awsController
-        .createCerts(certObject)
+      thingSchema.thingName = 123;
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/must be a string/i);
@@ -70,9 +70,9 @@ Private KEY content
     });
 
     it("should return an error if thingName empty", async () => {
-      certObject.thingName = "";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.thingName = "";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -82,10 +82,10 @@ Private KEY content
     });
 
     it("should return an error if thingName less than 3 chars", async () => {
-      certObject.thingName = "a";
+      thingSchema.thingName = "a";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -95,11 +95,11 @@ Private KEY content
     });
 
     it("should return an error if thingName longer than 255 chars", async () => {
-      certObject.thingName =
+      thingSchema.thingName =
         "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -109,10 +109,10 @@ Private KEY content
     });
 
     it("should return an error if certificate is not provided", async () => {
-      delete certObject.certificate;
+      delete thingSchema.certificate;
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -120,10 +120,10 @@ Private KEY content
     });
 
     it("should return an error if certificate is empty", async () => {
-      certObject.certificate = "";
+      thingSchema.certificate = "";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -133,10 +133,10 @@ Private KEY content
     });
 
     it("should return an error if certificate is invalid", async () => {
-      certObject.certificate = "a";
+      thingSchema.certificate = "a";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -144,9 +144,9 @@ Private KEY content
     });
 
     it("should return an error if certificate does not contain BEGINN CERTIFICATE", async () => {
-      certObject.certificate = "a -----END CERTIFICATE-----";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.certificate = "a -----END CERTIFICATE-----";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -154,9 +154,9 @@ Private KEY content
     });
 
     it("should return an error if certificate does not contain END CERTIFICATE", async () => {
-      certObject.certificate = "-----BEGIN CERTIFICATE----- a";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.certificate = "-----BEGIN CERTIFICATE----- a";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -164,10 +164,10 @@ Private KEY content
     });
 
     it("should return an error if caChain is not provided", async () => {
-      delete certObject.caChain;
+      delete thingSchema.caChain;
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -175,10 +175,10 @@ Private KEY content
     });
 
     it("should return an error if caChain is empty", async () => {
-      certObject.certificate = "";
+      thingSchema.certificate = "";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -188,10 +188,10 @@ Private KEY content
     });
 
     it("should return an error if caChain is invalid", async () => {
-      certObject.caChain = "a";
+      thingSchema.caChain = "a";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -199,9 +199,9 @@ Private KEY content
     });
 
     it("should return an error if caChain does not contain BEGINN CERTIFICATE", async () => {
-      certObject.caChain = "a -----END CERTIFICATE-----";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.caChain = "a -----END CERTIFICATE-----";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -209,9 +209,9 @@ Private KEY content
     });
 
     it("should return an error if caChain does not contain END CERTIFICATE", async () => {
-      certObject.caChain = "-----BEGIN CERTIFICATE----- a";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.caChain = "-----BEGIN CERTIFICATE----- a";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -220,10 +220,10 @@ Private KEY content
 
     // Privatekey
     it("should return an error if privateKey is not provided", async () => {
-      delete certObject.privateKey;
+      delete thingSchema.privateKey;
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -231,10 +231,10 @@ Private KEY content
     });
 
     it("should return an error if privateKey is empty", async () => {
-      certObject.privateKey = "";
+      thingSchema.privateKey = "";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -244,10 +244,10 @@ Private KEY content
     });
 
     it("should return an error if privateKey is invalid", async () => {
-      certObject.privateKey = "a";
+      thingSchema.privateKey = "a";
 
-      await awsController
-        .createCerts(certObject)
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -255,9 +255,9 @@ Private KEY content
     });
 
     it("should return an error if privateKey does not contain BEGIN RSA PRIVATE KEY", async () => {
-      certObject.privateKey = "a -----END RSA PRIVATE KEY-----";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.privateKey = "a -----END RSA PRIVATE KEY-----";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -265,9 +265,9 @@ Private KEY content
     });
 
     it("should return an error if privateKey does not contain END RSA PRIVATE KEY", async () => {
-      certObject.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
-      await awsController
-        .createCerts(certObject)
+      thingSchema.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
+      await awsThingsController
+        .createThing(thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -275,38 +275,38 @@ Private KEY content
     });
   });
 
-  describe("editCerts", () => {
+  describe("editThing", () => {
     beforeEach(async () => {
-      storedCert = await awsController.createCerts(certObject);
-      testCert = `
+      storedThing = await awsThingsController.createThing(thingSchema);
+      testCertificate = `
 -----BEGIN CERTIFICATE-----
 EDIT CERTIFICATE CONTENT
 -----END CERTIFICATE-----
 `;
 
-      testCa = `
+      testCsChain = `
 -----BEGIN CERTIFICATE-----
 EDIT CA CHAIN CONTENT
 -----END CERTIFICATE-----
 `;
 
-      testKey = `
+      testPrivateKey = `
 -----BEGIN RSA PRIVATE KEY-----
 EDIT Private KEY content
 -----END RSA PRIVATE KEY-----
 `;
-      certObject = {
+      thingSchema = {
         thingName: "EDIT 750-831",
-        certificate: testCert,
-        caChain: testCa,
-        privateKey: testKey
+        certificate: testCertificate,
+        caChain: testCsChain,
+        privateKey: testPrivateKey
       };
     });
 
     it("should return an required error if thingName is missing", async () => {
-      delete certObject.thingName;
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      delete thingSchema.thingName;
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -314,9 +314,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if thingName not a string", async () => {
-      certObject.thingName = 123;
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.thingName = 123;
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/must be a string/i);
@@ -324,9 +324,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if thingName empty", async () => {
-      certObject.thingName = "";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.thingName = "";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -336,10 +336,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if thingName less than 3 chars", async () => {
-      certObject.thingName = "a";
+      thingSchema.thingName = "a";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -349,11 +349,11 @@ EDIT Private KEY content
     });
 
     it("should return an error if thingName longer than 255 chars", async () => {
-      certObject.thingName =
+      thingSchema.thingName =
         "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -363,10 +363,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if certificate is not provided", async () => {
-      delete certObject.certificate;
+      delete thingSchema.certificate;
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -374,10 +374,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if certificate is empty", async () => {
-      certObject.certificate = "";
+      thingSchema.certificate = "";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -387,10 +387,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if certificate is invalid", async () => {
-      certObject.certificate = "a";
+      thingSchema.certificate = "a";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -398,9 +398,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if certificate does not contain BEGINN CERTIFICATE", async () => {
-      certObject.certificate = "a -----END CERTIFICATE-----";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.certificate = "a -----END CERTIFICATE-----";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -408,9 +408,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if certificate does not contain END CERTIFICATE", async () => {
-      certObject.certificate = "-----BEGIN CERTIFICATE----- a";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.certificate = "-----BEGIN CERTIFICATE----- a";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -418,10 +418,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if caChain is not provided", async () => {
-      delete certObject.caChain;
+      delete thingSchema.caChain;
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -429,10 +429,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if caChain is empty", async () => {
-      certObject.certificate = "";
+      thingSchema.certificate = "";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -442,10 +442,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if caChain is invalid", async () => {
-      certObject.caChain = "a";
+      thingSchema.caChain = "a";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -453,9 +453,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if caChain does not contain BEGINN CERTIFICATE", async () => {
-      certObject.caChain = "a -----END CERTIFICATE-----";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.caChain = "a -----END CERTIFICATE-----";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -463,9 +463,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if caChain does not contain END CERTIFICATE", async () => {
-      certObject.caChain = "-----BEGIN CERTIFICATE----- a";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.caChain = "-----BEGIN CERTIFICATE----- a";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -474,10 +474,10 @@ EDIT Private KEY content
 
     // Privatekey
     it("should return an error if privateKey is not provided", async () => {
-      delete certObject.privateKey;
+      delete thingSchema.privateKey;
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(/is required/i);
@@ -485,10 +485,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if privateKey is empty", async () => {
-      certObject.privateKey = "";
+      thingSchema.privateKey = "";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error.details[0].message).toMatch(
@@ -498,10 +498,10 @@ EDIT Private KEY content
     });
 
     it("should return an error if privateKey is invalid", async () => {
-      certObject.privateKey = "a";
+      thingSchema.privateKey = "a";
 
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -509,9 +509,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if privateKey does not contain BEGIN RSA PRIVATE KEY", async () => {
-      certObject.privateKey = "a -----END RSA PRIVATE KEY-----";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.privateKey = "a -----END RSA PRIVATE KEY-----";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -519,9 +519,9 @@ EDIT Private KEY content
     });
 
     it("should return an error if privateKey does not contain END RSA PRIVATE KEY", async () => {
-      certObject.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/invalid/i);
@@ -529,43 +529,43 @@ EDIT Private KEY content
     });
 
     it("should return an error if thingsname is already registered", async () => {
-      certObject.thingName = "750-831";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      thingSchema.thingName = "750-831";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then()
         .catch(err => {
           expect(err.error).toMatch(/already registered/i);
         });
     });
 
-    it("should return the edit certs with even if the name is the same", async () => {
-      certObject.thingName = "750-831";
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+    it("should return the edit Thing with even if the name is the same", async () => {
+      thingSchema.thingName = "750-831";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then(result => {
           expect(result.thingName).toBe("750-831");
-          expect(result.certificate).toBe(certObject.certificate);
-          expect(result.caChain).toBe(certObject.caChain);
+          expect(result.certificate).toBe(thingSchema.certificate);
+          expect(result.caChain).toBe(thingSchema.caChain);
         });
     });
 
     it("should return the edit object with all properties edit (not check private key because of hash) ", async () => {
-      await awsController
-        .editCerts(storedCert._id.toString(), certObject)
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
         .then(result => {
-          expect(result.thingName).toBe(certObject.thingName);
-          expect(result.certificate).toBe(certObject.certificate);
-          expect(result.caChain).toBe(certObject.caChain);
+          expect(result.thingName).toBe(thingSchema.thingName);
+          expect(result.certificate).toBe(thingSchema.certificate);
+          expect(result.caChain).toBe(thingSchema.caChain);
         });
     });
 
     it("should return the edit object with all properties edit (not check private key because of hash) ", async () => {
-      await awsController
-        .editCerts("5dd914f29eb31a5aacd1AAAA", certObject)
+      await awsThingsController
+        .editThing("5dd914f29eb31a5aacd1AAAA", thingSchema)
         .then()
         .catch(err => {
           expect(err.toString()).toMatch(
-            /No Certs found with ID: 5dd914f29eb31a5aacd1AAAA/i
+            /No Thing found with ID: 5dd914f29eb31a5aacd1AAAA/i
           );
         });
     });

@@ -1,7 +1,7 @@
 const Joi = require("@hapi/joi");
 const mongoose = require("mongoose");
 
-const certsSchema = new mongoose.Schema({
+const thingSchema = new mongoose.Schema({
   thingName: {
     type: String,
     required: true,
@@ -24,9 +24,9 @@ const certsSchema = new mongoose.Schema({
   created: { type: Date, default: Date.now }
 });
 
-const AwsCert = mongoose.model("AwsCert", certsSchema);
+const AwsThing = mongoose.model("AwsThing", thingSchema);
 
-function validate(certs) {
+function validate(thing) {
   const schema = Joi.object({
     thingName: Joi.string()
       .min(3)
@@ -37,27 +37,27 @@ function validate(certs) {
     privateKey: Joi.string().required()
   });
 
-  certs = schema.validate(certs);
+  thing = schema.validate(thing);
 
   //TODO: add better detailed error handling, return which file is invalid
-  if (!certs.error) {
+  if (!thing.error) {
     if (
-      certs.value.certificate.includes("-----BEGIN CERTIFICATE-----") &&
-      certs.value.certificate.includes("-----END CERTIFICATE-----") &&
-      certs.value.caChain.includes("-----BEGIN CERTIFICATE-----") &&
-      certs.value.caChain.includes("-----END CERTIFICATE-----") &&
-      certs.value.privateKey.includes("-----BEGIN RSA PRIVATE KEY-----") &&
-      certs.value.privateKey.includes("-----END RSA PRIVATE KEY-----")
+      thing.value.certificate.includes("-----BEGIN CERTIFICATE-----") &&
+      thing.value.certificate.includes("-----END CERTIFICATE-----") &&
+      thing.value.caChain.includes("-----BEGIN CERTIFICATE-----") &&
+      thing.value.caChain.includes("-----END CERTIFICATE-----") &&
+      thing.value.privateKey.includes("-----BEGIN RSA PRIVATE KEY-----") &&
+      thing.value.privateKey.includes("-----END RSA PRIVATE KEY-----")
     ) {
-      return certs;
+      return thing;
     } else {
-      certs.error = "Invalid Certs Files";
-      return certs;
+      thing.error = "Invalid thing Files";
+      return thing;
     }
   } else {
-    return certs;
+    return thing;
   }
 }
 
 module.exports.validate = validate;
-module.exports.AwsCert = AwsCert;
+module.exports.AwsThing = AwsThing;

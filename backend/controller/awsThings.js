@@ -1,38 +1,40 @@
-const debug = require("debug")("app:awsCertController");
-const { AwsCert, validate } = require("../models/awsCerts");
+const debug = require("debug")("app:awsThingController");
+const { AwsThing, validate } = require("../models/awsThings");
 const bcrypt = require("bcrypt");
 var objectID = require("mongodb").ObjectID;
 
-module.exports.createCerts = function(certs) {
+module.exports.createThing = function(thingSchema) {
   return new Promise((resolve, reject) => {
-    const validation = validate(certs);
+    const validation = validate(thingSchema);
     if (validation.error) {
       return reject(validation);
     } else {
-      AwsCert.find({ thingName: certs.thingName })
-        .then(existingCert => {
-          if (existingCert.length !== 0) {
-            reject(new Error(`Thing ${certs.thingName} is already registered`));
+      AwsThing.find({ thingName: thingSchema.thingName })
+        .then(existingThing => {
+          if (existingThing.length !== 0) {
+            reject(
+              new Error(`Thing ${thingSchema.thingName} is already registered`)
+            );
           } else {
-            const newCert = new AwsCert(certs);
+            const newThing = new AwsThing(thingSchema);
             bcrypt.genSalt(10).then(salt => {
-              bcrypt.hash(newCert.privateKey, salt).then(hashedPrivateKey => {
-                newCert.privateKey = hashedPrivateKey;
+              bcrypt.hash(newThing.privateKey, salt).then(hashedPrivateKey => {
+                newThing.privateKey = hashedPrivateKey;
 
-                newCert
+                newThing
                   .save()
                   .then(result => {
                     debug(
-                      `AWS Certs for thing ${newCert.thingName} successfully created created`
+                      `AWS Thing for thing ${newThing.thingName} successfully created created`
                     );
-                    debug(newCert);
+                    debug(newThing);
                     resolve(result);
                   })
                   .catch(err => {
                     debug(err);
                     reject(
                       new Error(
-                        "Something broke while creating AWS Cert - Storing to DB",
+                        "Something broke while creating AWS Thing - Storing to DB",
                         err
                       )
                     );
@@ -43,22 +45,22 @@ module.exports.createCerts = function(certs) {
         })
         .catch(err => {
           debug(err);
-          reject(new Error("Something broke while creating AWS Cert.", err));
+          reject(new Error("Something broke while creating AWS Thing.", err));
         });
     }
   });
 };
 
-module.exports.getCerts = function(id) {
+module.exports.getThings = function(id) {
   return new Promise((resolve, reject) => {
     if (id) {
-      return AwsCert.findOne({ _id: id })
+      return AwsThing.findOne({ _id: id })
         .select("-privateKey")
         .then(result => {
           debug("result ", result);
           if (!result) {
             debug("hier");
-            reject(new Error("No AWS Certs found with given ID: " + id));
+            reject(new Error("No AWS Thing found with given ID: " + id));
           } else {
             resolve(result);
           }
@@ -67,7 +69,7 @@ module.exports.getCerts = function(id) {
           resolve(new Error("Something broke while reading DB", err));
         });
     } else {
-      return AwsCert.find()
+      return AwsThing.find()
         .select("-privateKey")
         .then(result => {
           resolve(result);
@@ -79,58 +81,58 @@ module.exports.getCerts = function(id) {
   });
 };
 
-module.exports.editCerts = function(id, certs) {
+module.exports.editThing = function(id, thing) {
   return new Promise((resolve, reject) => {
     if (objectID.isValid(id)) {
-      const validation = validate(certs);
+      const validation = validate(thing);
 
       if (validation.error) {
         reject(validation);
       } else {
-        AwsCert.findOne({ _id: id }).then(existingCerts => {
-          if (!existingCerts) {
-            reject(new Error(`No Certs found with ID: ${id}`));
+        AwsThing.findOne({ _id: id }).then(existingThing => {
+          if (!existingThing) {
+            reject(new Error(`No Thing found with ID: ${id}`));
           } else {
-            AwsCert.findOne({ thingName: certs.thingName })
+            AwsThing.findOne({ thingName: thing.thingName })
               .then(existingThingWithName => {
                 if (existingThingWithName) {
                   if (existingThingWithName._id.toString() !== id) {
                     reject(
-                      new Error(`${certs.thingName} is already registered.`)
+                      new Error(`${thing.thingName} is already registered.`)
                     );
                   } else {
-                    AwsCert.findOneAndUpdate({ _id: id }, certs)
+                    AwsThing.findOneAndUpdate({ _id: id }, thing)
                       .then(update => {
                         update.save().then(() => {
-                          AwsCert.findOne({ _id: id }).then(result => {
+                          AwsThing.findOne({ _id: id }).then(result => {
                             resolve(result);
                           });
                         });
                       })
                       .catch(err => {
-                        debug("Something broke while updating AWS Certs", err);
+                        debug("Something broke while updating AWS Thing", err);
                         reject(
                           new Error(
-                            "Something broke while updating AWS Certs",
+                            "Something broke while updating AWS Thing",
                             err
                           )
                         );
                       });
                   }
                 } else {
-                  AwsCert.findOneAndUpdate({ _id: id }, certs)
+                  AwsThing.findOneAndUpdate({ _id: id }, thing)
                     .then(update => {
                       update.save().then(() => {
-                        AwsCert.findOne({ _id: id }).then(result => {
+                        AwsThing.findOne({ _id: id }).then(result => {
                           resolve(result);
                         });
                       });
                     })
                     .catch(err => {
-                      debug("Something broke while updating AWS Certs", err);
+                      debug("Something broke while updating AWS Thing", err);
                       reject(
                         new Error(
-                          "Something broke while updating AWS Certs",
+                          "Something broke while updating AWS Thing",
                           err
                         )
                       );
@@ -142,7 +144,7 @@ module.exports.editCerts = function(id, certs) {
                 debug(err);
                 reject(
                   new Error(
-                    "Something broke while updating AWS Cert in database.",
+                    "Something broke while updating AWS Thing in database.",
                     err
                   )
                 );
@@ -156,22 +158,22 @@ module.exports.editCerts = function(id, certs) {
   });
 };
 
-module.exports.deleteCerts = function(id) {
+module.exports.deleteThing = function(id) {
   return new Promise((resolve, reject) => {
     if (objectID.isValid(id)) {
-      AwsCert.findOne({ _id: id }).then(existingCerts => {
-        debug(existingCerts);
-        if (!existingCerts) {
-          reject(new Error(`No AWS Certs found with ID: ${id}`));
+      AwsThing.findOne({ _id: id }).then(existingThing => {
+        debug(existingThing);
+        if (!existingThing) {
+          reject(new Error(`No AWS Thing found with ID: ${id}`));
         } else {
-          AwsCert.deleteOne({ _id: id })
+          AwsThing.deleteOne({ _id: id })
             .then(() => {
-              resolve(`Successfully deleted AWS Certs with ID: ${id}`);
+              resolve(`Successfully deleted AWS Thing with ID: ${id}`);
             })
             .catch(err => {
               reject(
                 new Error(
-                  `Something broke while deleting AWS Certs with ID: ${id}`,
+                  `Something broke while deleting AWS Thing with ID: ${id}`,
                   err
                 )
               );
