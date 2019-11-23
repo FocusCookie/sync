@@ -33,7 +33,11 @@ router.post("/certs", auth, (req, res) => {
       res.send(result);
     })
     .catch(err => {
-      res.status(400).send(err);
+      if (err.error) {
+        res.status(400).send(err.error);
+      } else {
+        res.status(400).send(err.message);
+      }
     });
 });
 

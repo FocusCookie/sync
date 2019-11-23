@@ -4,7 +4,7 @@
   "description": "This is the backend part of the wago iot gateway.",
   "main": "app.js",
   "scripts": {
-    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 jest --watchAll --verbose --coverage -- --runInBand "
+    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 jest --watchAll --verbose --coverage --runInBand "
   },
   "repository": {
     "type": "git",

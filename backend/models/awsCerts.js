@@ -11,8 +11,7 @@ const certsSchema = new mongoose.Schema({
   },
   certificate: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   caChain: {
     type: String,
@@ -20,7 +19,7 @@ const certsSchema = new mongoose.Schema({
   },
   privateKey: {
     type: String,
-    unique: true
+    required: true
   },
   created: { type: Date, default: Date.now }
 });

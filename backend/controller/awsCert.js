@@ -11,7 +11,7 @@ module.exports.createCerts = function(certs) {
       AwsCert.find({ thingName: certs.thingName })
         .then(existingCert => {
           if (existingCert.length !== 0) {
-            reject(`Thing ${certs.thingName} is already registered`);
+            reject(new Error(`Thing ${certs.thingName} is already registered`));
           } else {
             const newCert = new AwsCert(certs);
             bcrypt.genSalt(10).then(salt => {
