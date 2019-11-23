@@ -7,7 +7,7 @@ let certSchema;
 let userToken;
 let storedCert;
 
-describe("Users", () => {
+describe("AWS Routes", () => {
   beforeEach(async () => {
     server = require("../../app");
     certSchema = {
@@ -399,5 +399,9 @@ describe("Users", () => {
       expect(result.status).toBe(200);
       expect(result.body).toHaveProperty("_id");
     });
+  });
+
+  describe("DELETE /certs/:id", () => {
+    //TODO: integrate deletion
   });
 });

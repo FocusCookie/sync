@@ -41,4 +41,8 @@ router.post("/certs", auth, (req, res) => {
     });
 });
 
+router.delete("/certs/:id", auth, (req, res) => {
+  //TODO: integrate deletion
+});
+
 module.exports = router;

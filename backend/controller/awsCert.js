@@ -77,3 +77,7 @@ module.exports.getCerts = function(id) {
     }
   });
 };
+
+module.exports.deleteCerts = function(id) {
+  //TODO: integrate deletion
+};
