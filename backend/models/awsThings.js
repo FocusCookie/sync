@@ -9,6 +9,11 @@ const thingSchema = new mongoose.Schema({
     maxlength: 255,
     unique: true
   },
+  host: {
+    type: String,
+    minlength: 10,
+    maxlength: 255
+  },
   certificate: {
     type: String,
     required: true
@@ -30,6 +35,10 @@ function validate(thing) {
   const schema = Joi.object({
     thingName: Joi.string()
       .min(3)
+      .max(255)
+      .required(),
+    host: Joi.string()
+      .min(10)
       .max(255)
       .required(),
     certificate: Joi.string().required(),

@@ -12,6 +12,7 @@ describe("AWS Routes", () => {
     server = require("../../app");
     thingSchema = {
       thingName: "750-831",
+      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
       certificate: `
     -----BEGIN CERTIFICATE-----
     certificate CONTENT
@@ -233,6 +234,7 @@ describe("AWS Routes", () => {
       expect(result.error.text).toMatch(/Invalid token/i);
     });
 
+    // ThingName
     it("should return 400 if thingName is missing ", async () => {
       delete thingSchema.thingName;
       const result = await executePostThing();
@@ -267,6 +269,50 @@ describe("AWS Routes", () => {
 
     it("should return 400 if thingName longer than 255 chars", async () => {
       thingSchema.thingName =
+        "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(
+        /less than or equal to 255 characters/i
+      );
+    });
+
+    // Host
+    it("should return 400 if host is missing ", async () => {
+      delete thingSchema.host;
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is required/i);
+    });
+
+    it("should return 400 if host not a string", async () => {
+      thingSchema.host = 123;
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be a string/i);
+    });
+
+    it("should return 400 if host empty", async () => {
+      thingSchema.host = "";
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is not allowed to be empty/i);
+    });
+
+    it("should return 400 if host less than 10 chars", async () => {
+      thingSchema.host = "a";
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/at least 10 characters/i);
+    });
+
+    it("should return 400 if host longer than 255 chars", async () => {
+      thingSchema.host =
         "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
       const result = await executePostThing();
 
@@ -419,6 +465,7 @@ describe("AWS Routes", () => {
     beforeEach(async () => {
       thingSchema = {
         thingName: "EDIT 750-831",
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
         certificate: `
   -----BEGIN CERTIFICATE-----
   EDIT certificate CONTENT
@@ -472,6 +519,7 @@ describe("AWS Routes", () => {
       expect(result.error.text).toMatch(/Invalid token/i);
     });
 
+    // ThingName
     it("should return 400 if thingName is missing ", async () => {
       delete thingSchema.thingName;
       const result = await executePutThing();
@@ -506,6 +554,50 @@ describe("AWS Routes", () => {
 
     it("should return 400 if thingName longer than 255 chars", async () => {
       thingSchema.thingName =
+        "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
+      const result = await executePutThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(
+        /less than or equal to 255 characters/i
+      );
+    });
+
+    // Host
+    it("should return 400 if host is missing ", async () => {
+      delete thingSchema.host;
+      const result = await executePutThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is required/i);
+    });
+
+    it("should return 400 if host not a string", async () => {
+      thingSchema.host = 123;
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/must be a string/i);
+    });
+
+    it("should return 400 if host empty", async () => {
+      thingSchema.host = "";
+      const result = await executePutThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/is not allowed to be empty/i);
+    });
+
+    it("should return 400 if host less than 10 chars", async () => {
+      thingSchema.host = "a";
+      const result = await executePutThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/at least 10 characters/i);
+    });
+
+    it("should return 400 if host longer than 255 chars", async () => {
+      thingSchema.host =
         "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
       const result = await executePutThing();
 

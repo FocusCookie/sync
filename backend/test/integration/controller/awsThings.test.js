@@ -31,6 +31,7 @@ Private KEY content
 
     thingSchema = {
       thingName: "750-831",
+      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
       certificate: testCertificate,
       caChain: testCsChain,
       privateKey: testPrivateKey
@@ -43,6 +44,7 @@ Private KEY content
   });
 
   describe("createAwsThing", () => {
+    // THINGNAME
     it("should return the given thing with an db _id property", async () => {
       await awsThingsController.createThing(thingSchema).then(result => {
         expect(result).toHaveProperty("_id");
@@ -107,6 +109,68 @@ Private KEY content
           );
         });
     });
+
+    // HOST
+    it("should return an required error if host is missing", async () => {
+      delete thingSchema.host;
+      await awsThingsController
+        .createThing(thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(/is required/i);
+        });
+    });
+
+    it("should return an error if host not a string", async () => {
+      thingSchema.host = 123;
+      await awsThingsController
+        .createThing(thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(/must be a string/i);
+        });
+    });
+
+    it("should return an error if host empty", async () => {
+      thingSchema.host = "";
+      await awsThingsController
+        .createThing(thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(
+            /is not allowed to be empty/i
+          );
+        });
+    });
+
+    it("should return an error if host less than 10 chars", async () => {
+      thingSchema.host = "a";
+
+      await awsThingsController
+        .createThing(thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(
+            /at least 10 characters/i
+          );
+        });
+    });
+
+    it("should return an error if host longer than 255 chars", async () => {
+      thingSchema.host =
+        "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
+
+      await awsThingsController
+        .createThing(thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(
+            /less than or equal to 255 characters/i
+          );
+        });
+    });
+
+    // CERTS
 
     it("should return an error if certificate is not provided", async () => {
       delete thingSchema.certificate;
@@ -297,6 +361,7 @@ EDIT Private KEY content
 `;
       thingSchema = {
         thingName: "EDIT 750-831",
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
         certificate: testCertificate,
         caChain: testCsChain,
         privateKey: testPrivateKey
@@ -362,6 +427,67 @@ EDIT Private KEY content
         });
     });
 
+    // HOST
+    it("should return an required error if host is missing", async () => {
+      delete thingSchema.host;
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(/is required/i);
+        });
+    });
+
+    it("should return an error if host not a string", async () => {
+      thingSchema.host = 123;
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(/must be a string/i);
+        });
+    });
+
+    it("should return an error if host empty", async () => {
+      thingSchema.host = "";
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(
+            /is not allowed to be empty/i
+          );
+        });
+    });
+
+    it("should return an error if host less than 10 chars", async () => {
+      thingSchema.host = "a";
+
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(
+            /at least 10 characters/i
+          );
+        });
+    });
+
+    it("should return an error if host longer than 255 chars", async () => {
+      thingSchema.host =
+        "1234567890-1234567890-1234567890-11234567890-1234567890-1234567890-1234567890-234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-1234567890-";
+
+      await awsThingsController
+        .editThing(storedThing._id.toString(), thingSchema)
+        .then()
+        .catch(err => {
+          expect(err.error.details[0].message).toMatch(
+            /less than or equal to 255 characters/i
+          );
+        });
+    });
+
+    // CERTS
     it("should return an error if certificate is not provided", async () => {
       delete thingSchema.certificate;
 
