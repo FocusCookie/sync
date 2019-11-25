@@ -59,7 +59,6 @@ module.exports.getThings = function(id) {
         .then(result => {
           debug("result ", result);
           if (!result) {
-            debug("hier");
             reject(new Error("No AWS Thing found with given ID: " + id));
           } else {
             resolve(result);
