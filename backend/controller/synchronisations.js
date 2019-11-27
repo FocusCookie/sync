@@ -110,7 +110,7 @@ module.exports.editSynchronisation = function(id, synchronisation) {
             // ANFANG
             Synchronisation.findOne({ plcId: synchronisation.plcId })
               .then(plcIdisUsed => {
-                if (plcIdisUsed) {
+                if (plcIdisUsed && plcIdisUsed._id.toString() !== id) {
                   debug("Given PLC ID: " + synchronisation.plcId);
                   debug("Found PLC ID with PLC ID: " + plcIdisUsed);
                   reject(
@@ -132,7 +132,11 @@ module.exports.editSynchronisation = function(id, synchronisation) {
                           cloudOptionsId: synchronisation.cloudOptionsId
                         })
                           .then(cloudOptionsIsUsed => {
-                            if (cloudOptionsIsUsed) {
+                            if (
+                              cloudOptionsIsUsed &&
+                              cloudOptionsIsUsed &&
+                              cloudOptionsIsUsed._id.toString() !== id
+                            ) {
                               reject(
                                 new Error(
                                   `Cloud options ID ${synchronisation.cloudOptionsId} is already used in another synchronisation`
