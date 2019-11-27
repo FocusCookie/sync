@@ -46,7 +46,7 @@ module.exports.createSynchronisation = function(synchronisation) {
                           if (!thingExists) {
                             reject(
                               new Error(
-                                `No AWS Thing found with ID ${synchronisation.cloudOptionsId}.`
+                                `No cloud options found with ID ${synchronisation.cloudOptionsId}.`
                               )
                             );
                           } else {
@@ -220,14 +220,13 @@ module.exports.editSynchronisation = function(id, synchronisation) {
 
 module.exports.getSynchronisations = function(id) {
   return new Promise((resolve, reject) => {
-    debug(id);
     if (id) {
       if (objectID.isValid(id)) {
         return Synchronisation.findOne({ _id: id })
           .then(result => {
             if (!result) {
-              reject(
-                new Error("No Synchronisation found with given ID: " + id)
+              return reject(
+                new Error("No Synchronisation found with ID: " + id)
               );
             } else {
               resolve(result);

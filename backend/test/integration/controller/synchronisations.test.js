@@ -294,7 +294,7 @@ Private KEY content
         .createSynchronisation(synchronisationSchema)
         .catch(err => {
           expect(err.message).toMatch(
-            /No AWS Thing found with ID 5dd6b9f33d27f3fd0306AAAA/i
+            /No cloud options found with ID 5dd6b9f33d27f3fd0306AAAA/i
           );
         });
     });
@@ -438,7 +438,7 @@ Private KEY content
         .getSynchronisations("5dd9956eeb5dfd2f93c23ba6")
         .catch(err => {
           expect(err.message).toMatch(
-            /No Synchronisation found with given ID: 5dd9956eeb5dfd2f93c23ba6/i
+            /No Synchronisation found with ID: 5dd9956eeb5dfd2f93c23ba6/i
           );
         });
     });

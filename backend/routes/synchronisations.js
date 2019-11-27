@@ -15,7 +15,13 @@ router.get("/:id", auth, (req, res) => {
   synchronisationsController
     .getSynchronisations(req.params.id)
     .then(result => res.send(result))
-    .catch(err => res.status(400).send(err));
+    .catch(err => {
+      if (err.error) {
+        res.status(400).send(err.error);
+      } else {
+        res.status(400).send(err.message);
+      }
+    });
 });
 
 router.post("/", auth, (req, res) => {
