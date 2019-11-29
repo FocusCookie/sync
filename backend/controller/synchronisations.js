@@ -107,107 +107,114 @@ module.exports.editSynchronisation = function(id, synchronisation) {
           if (validation.error) {
             reject(validation);
           } else {
-            // ANFANG
-            Synchronisation.findOne({ plcId: synchronisation.plcId })
-              .then(plcIdisUsed => {
-                if (plcIdisUsed && plcIdisUsed._id.toString() !== id) {
-                  debug("Given PLC ID: " + synchronisation.plcId);
-                  debug("Found PLC ID with PLC ID: " + plcIdisUsed);
-                  reject(
-                    new Error(
-                      `PLC ID ${synchronisation.plcId} is already used in another synchronisation.`
-                    )
-                  );
-                } else {
-                  Wago.findOne({ _id: synchronisation.plcId })
-                    .then(plcExists => {
-                      if (!plcExists) {
-                        reject(
-                          new Error(
-                            `No PLC found with ID ${synchronisation.plcId}`
-                          )
-                        );
-                      } else {
-                        Synchronisation.findOne({
-                          cloudOptionsId: synchronisation.cloudOptionsId
-                        })
-                          .then(cloudOptionsIsUsed => {
-                            if (
-                              cloudOptionsIsUsed &&
-                              cloudOptionsIsUsed &&
-                              cloudOptionsIsUsed._id.toString() !== id
-                            ) {
-                              reject(
-                                new Error(
-                                  `Cloud options ID ${synchronisation.cloudOptionsId} is already used in another synchronisation`
-                                )
-                              );
-                            } else {
-                              AwsThing.findOne({
-                                _id: synchronisation.cloudOptionsId
-                              }).then(thingExists => {
-                                if (!thingExists) {
-                                  reject(
-                                    new Error(
-                                      `No AWS Thing found with ID ${synchronisation.cloudOptionsId}.`
-                                    )
-                                  );
-                                } else {
-                                  // HIER
-                                  Synchronisation.findOneAndUpdate(
-                                    { _id: id },
-                                    synchronisation
+            if (idFound.status) {
+              // sync is active
+              reject(
+                new Error(
+                  "Synchronisation status is active, please deactivate the synchronisation first."
+                )
+              );
+            } else {
+              Synchronisation.findOne({ plcId: synchronisation.plcId })
+                .then(plcIdisUsed => {
+                  if (plcIdisUsed && plcIdisUsed._id.toString() !== id) {
+                    debug("Given PLC ID: " + synchronisation.plcId);
+                    debug("Found PLC ID with PLC ID: " + plcIdisUsed);
+                    reject(
+                      new Error(
+                        `PLC ID ${synchronisation.plcId} is already used in another synchronisation.`
+                      )
+                    );
+                  } else {
+                    Wago.findOne({ _id: synchronisation.plcId })
+                      .then(plcExists => {
+                        if (!plcExists) {
+                          reject(
+                            new Error(
+                              `No PLC found with ID ${synchronisation.plcId}`
+                            )
+                          );
+                        } else {
+                          Synchronisation.findOne({
+                            cloudOptionsId: synchronisation.cloudOptionsId
+                          })
+                            .then(cloudOptionsIsUsed => {
+                              if (
+                                cloudOptionsIsUsed &&
+                                cloudOptionsIsUsed &&
+                                cloudOptionsIsUsed._id.toString() !== id
+                              ) {
+                                reject(
+                                  new Error(
+                                    `Cloud options ID ${synchronisation.cloudOptionsId} is already used in another synchronisation`
                                   )
-                                    .then(update => {
-                                      update.save().then(() => {
-                                        Synchronisation.findOne({
-                                          _id: id
-                                        }).then(result => {
-                                          resolve(result);
+                                );
+                              } else {
+                                AwsThing.findOne({
+                                  _id: synchronisation.cloudOptionsId
+                                }).then(thingExists => {
+                                  if (!thingExists) {
+                                    reject(
+                                      new Error(
+                                        `No AWS Thing found with ID ${synchronisation.cloudOptionsId}.`
+                                      )
+                                    );
+                                  } else {
+                                    // HIER
+                                    Synchronisation.findOneAndUpdate(
+                                      { _id: id },
+                                      synchronisation
+                                    )
+                                      .then(update => {
+                                        update.save().then(() => {
+                                          Synchronisation.findOne({
+                                            _id: id
+                                          }).then(result => {
+                                            resolve(result);
+                                          });
                                         });
-                                      });
-                                    })
-                                    .catch(err => {
-                                      debug(
-                                        "Something broke while updating Synchronisation",
-                                        err
-                                      );
-                                      reject(
-                                        new Error(
+                                      })
+                                      .catch(err => {
+                                        debug(
                                           "Something broke while updating Synchronisation",
                                           err
-                                        )
-                                      );
-                                    });
-                                }
-                              });
-                            }
-                          })
-                          .catch(err => {
-                            debug(err);
-                            reject(
-                              new Error(
-                                "Something broke while checking Cloud Options ID."
-                              )
-                            );
-                          });
-                      }
-                    })
-                    .catch(err => {
-                      debug(err);
-                      reject(
-                        new Error(
-                          "Something broke while checking if PLC exists."
-                        )
-                      );
-                    });
-                }
-              })
-              .catch(err => {
-                debug(err);
-                reject(new Error("Something broke while checking PLC ID."));
-              });
-            // ENDE
+                                        );
+                                        reject(
+                                          new Error(
+                                            "Something broke while updating Synchronisation",
+                                            err
+                                          )
+                                        );
+                                      });
+                                  }
+                                });
+                              }
+                            })
+                            .catch(err => {
+                              debug(err);
+                              reject(
+                                new Error(
+                                  "Something broke while checking Cloud Options ID."
+                                )
+                              );
+                            });
+                        }
+                      })
+                      .catch(err => {
+                        debug(err);
+                        reject(
+                          new Error(
+                            "Something broke while checking if PLC exists."
+                          )
+                        );
+                      });
+                  }
+                })
+                .catch(err => {
+                  debug(err);
+                  reject(new Error("Something broke while checking PLC ID."));
+                });
+            }
           }
         }
       });
@@ -268,21 +275,67 @@ module.exports.deleteSynchronisation = function(id) {
         if (!existingSynchronisation) {
           reject(new Error(`No Synchronisation found with ID: ${id}`));
         } else {
-          Synchronisation.deleteOne({ _id: id })
-            .then(() => {
-              resolve(`Successfully deleted Synchronisation with ID: ${id}`);
-            })
-            .catch(err => {
-              reject(
-                new Error(
-                  `Something broke while deleting Synchronisation with ID: ${id}`,
-                  err
-                )
-              );
-            });
+          if (!existingSynchronisation.status) {
+            Synchronisation.deleteOne({ _id: id })
+              .then(() => {
+                resolve(`Successfully deleted Synchronisation with ID: ${id}`);
+              })
+              .catch(err => {
+                reject(
+                  new Error(
+                    `Something broke while deleting Synchronisation with ID: ${id}`,
+                    err
+                  )
+                );
+              });
+          } else {
+            reject(
+              new Error(
+                "Synchronisation status is active, please deactivate the synchronisation first."
+              )
+            );
+          }
         }
       });
     } else {
+      reject(new Error("Invalid ID"));
+    }
+  });
+};
+
+module.exports.updateSynchronisationStatus = function(id, status) {
+  return new Promise((resolve, reject) => {
+    if (objectID.isValid(id)) {
+      Synchronisation.findOne({ _id: id }).then(foundSynchronisation => {
+        if (!foundSynchronisation) {
+          reject(new Error("No Synchronisation found with ID: " + id));
+        } else {
+          if (
+            status === undefined ||
+            status === null ||
+            typeof status !== "boolean"
+          ) {
+            reject(new Error("Invalid status value."));
+          } else {
+            foundSynchronisation.status = status;
+            foundSynchronisation
+              .save()
+              .then(result => {
+                resolve(result);
+              })
+              .catch(err => {
+                reject(
+                  new Error(
+                    "Something broke while updating Synchronisation Status.",
+                    err
+                  )
+                );
+              });
+          }
+        }
+      });
+    } else {
+      debug("Invalid ID");
       reject(new Error("Invalid ID"));
     }
   });

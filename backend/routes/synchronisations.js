@@ -65,4 +65,19 @@ router.delete("/:id", auth, (req, res) => {
     });
 });
 
+router.post("/:id/status", auth, (req, res) => {
+  synchronisationsController
+    .updateSynchronisationStatus(req.params.id, req.body.status)
+    .then(result => {
+      res.send(result);
+    })
+    .catch(err => {
+      if (err.error) {
+        res.status(400).send(err.error);
+      } else {
+        res.status(400).send(err.message);
+      }
+    });
+});
+
 module.exports = router;

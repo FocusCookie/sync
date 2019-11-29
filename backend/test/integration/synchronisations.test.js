@@ -814,6 +814,62 @@ describe("Synchronisation Routes", () => {
       });
     });
 
+    describe("status", () => {
+      it("should return 400 if synchronisation status is true/active", async () => {
+        anotherStoredPlc = await wagoController.createWago({
+          name: "750-880",
+          ip: "192.168.1.100",
+          mac: "00:30:de:0a:de:1d",
+          articleNumber: "750-831",
+          modules: [466, 496],
+          files: []
+        });
+
+        anotherStoredAwsThing = await awsThingsController.createThing({
+          thingName: "750-333",
+          host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
+          certificate: `
+          -----BEGIN CERTIFICATE-----
+          certificate CONTENT
+          -----END CERTIFICATE-----
+          `,
+          caChain: `
+          -----BEGIN CERTIFICATE-----
+          CA CHAIN CONTENT
+          -----END CERTIFICATE-----
+          `,
+          privateKey: `
+          -----BEGIN RSA PRIVATE KEY-----
+          Private KEY content
+          -----END RSA PRIVATE KEY-----
+          `
+        });
+
+        const activeSchema = {
+          plcId: anotherStoredPlc._id.toString(),
+          cloudProvider: "aws",
+          cloudOptionsId: anotherStoredAwsThing._id.toString(),
+          interval: 5000,
+          status: true
+        };
+
+        const storedActiveSynch = new Synchronisation(activeSchema);
+        await storedActiveSynch.save();
+
+        delete activeSchema.status;
+
+        const result = await executePut(
+          storedActiveSynch._id.toString(),
+          activeSchema
+        );
+
+        expect(result.status).toBe(400);
+        expect(result.res.text).toMatch(
+          /Synchronisation status is active, please deactivate the synchronisation first/i
+        );
+      });
+    });
+
     it("should return 200 if sync was successfully edit", async () => {
       anotherStoredPlc = await wagoController.createWago({
         name: "750-333",
@@ -927,6 +983,55 @@ describe("Synchronisation Routes", () => {
         expect(result.status).toBe(400);
         expect(result.error.text).toMatch(/Invalid ID/i);
       });
+    });
+
+    it("should return 400 if synchronisation status is true/active", async () => {
+      anotherStoredPlc = await wagoController.createWago({
+        name: "750-880",
+        ip: "192.168.1.10",
+        mac: "00:30:de:0a:de:1d",
+        articleNumber: "750-831",
+        modules: [466, 496],
+        files: []
+      });
+
+      anotherStoredAwsThing = await awsThingsController.createThing({
+        thingName: "750-880",
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
+        certificate: `
+        -----BEGIN CERTIFICATE-----
+        certificate CONTENT
+        -----END CERTIFICATE-----
+        `,
+        caChain: `
+        -----BEGIN CERTIFICATE-----
+        CA CHAIN CONTENT
+        -----END CERTIFICATE-----
+        `,
+        privateKey: `
+        -----BEGIN RSA PRIVATE KEY-----
+        Private KEY content
+        -----END RSA PRIVATE KEY-----
+        `
+      });
+
+      const activeSchema = {
+        plcId: anotherStoredPlc._id.toString(),
+        cloudProvider: "aws",
+        cloudOptionsId: anotherStoredAwsThing._id.toString(),
+        interval: 5000,
+        status: true
+      };
+
+      const storedActiveSynch = new Synchronisation(activeSchema);
+      await storedActiveSynch.save();
+
+      const result = await executeDelete(storedActiveSynch._id.toString());
+
+      expect(result.status).toBe(400);
+      expect(result.res.text).toMatch(
+        /Synchronisation status is active, please deactivate the synchronisation first/i
+      );
     });
 
     it("should return 200 and a successfully deleted message", async () => {

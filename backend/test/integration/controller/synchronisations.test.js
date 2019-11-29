@@ -977,4 +977,72 @@ Private KEY content
         });
     });
   });
+
+  describe("updateSynchronisationStatus", () => {
+    beforeEach(async () => {
+      await Synchronisation.deleteMany({});
+    });
+
+    describe("id errors", () => {
+      it("should an invalid id error if invalid id is given", async () => {
+        const storedSync = await synchronisationController.createSynchronisation(
+          synchronisationSchema
+        );
+
+        await synchronisationController
+          .updateSynchronisationStatus(storedSync._id.toString(), true)
+          .catch(err => {
+            expect(err.message).toMatch(/Invalid ID/i);
+          });
+      });
+
+      it("should an invalid id error if given id is not accosiated with a sync", async () => {
+        await synchronisationController
+          .updateSynchronisationStatus("5dd9956eeb5dfd2f93c2AAAA", true)
+          .catch(err => {
+            expect(err.message).toMatch(
+              /No Synchronisation found with ID: 5dd9956eeb5dfd2f93c2AAAA/i
+            );
+          });
+      });
+    });
+
+    it("should return invalid status value if no status is provided", async () => {
+      const storedSync = await synchronisationController.createSynchronisation(
+        synchronisationSchema
+      );
+
+      await synchronisationController
+        .updateSynchronisationStatus(storedSync._id.toString())
+        .catch(err => {
+          expect(err.message).toMatch(/Invalid status value/i);
+        });
+    });
+
+    it("should return invalid status value if provided status is not boolean", async () => {
+      const storedSync = await synchronisationController.createSynchronisation(
+        synchronisationSchema
+      );
+
+      await synchronisationController
+        .updateSynchronisationStatus(storedSync._id.toString(), "a")
+        .catch(err => {
+          expect(err.message).toMatch(/Invalid status value/i);
+        });
+    });
+
+    it("should return the synchronisation including the updated status", async () => {
+      const storedSync = await synchronisationController.createSynchronisation(
+        synchronisationSchema
+      );
+
+      await synchronisationController
+        .updateSynchronisationStatus(storedSync._id.toString(), true)
+        .then(result => {
+          expect(result._id.toString()).toBe(storedSync._id.toString());
+          expect(result).toHaveProperty("status");
+          expect(result.status).toBe(true);
+        });
+    });
+  });
 });
