@@ -324,6 +324,7 @@ module.exports.updateSynchronisationStatus = function(id, status) {
                 resolve(result);
               })
               .catch(err => {
+                debug(err);
                 reject(
                   new Error(
                     "Something broke while updating Synchronisation Status.",

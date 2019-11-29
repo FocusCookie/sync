@@ -14,6 +14,8 @@ let anotherStoredAwsThing;
 let storedSync;
 let anotherStoredSync;
 let synchronisationSchema;
+let syncStatus = { status: true };
+let syncStatusId;
 
 describe("Synchronisation Routes", () => {
   beforeEach(async () => {
@@ -123,6 +125,13 @@ describe("Synchronisation Routes", () => {
         .set("x-auth-token", userToken)
         .send();
     }
+  };
+
+  const executeStatus = id => {
+    return request(server)
+      .post("/api/synchronisations/" + id + "/status")
+      .set("x-auth-token", userToken)
+      .send(syncStatus);
   };
 
   describe("GET /", () => {
@@ -1041,6 +1050,95 @@ describe("Synchronisation Routes", () => {
       expect(result.res.text).toMatch(
         /.*Successfully deleted Synchronisation with ID.*/i
       );
+    });
+  });
+
+  describe("POST /:ID/status", () => {
+    beforeEach(async () => {
+      storedSync = await synchronisationsController.createSynchronisation(
+        synchronisationSchema
+      );
+      syncStatusId = storedSync._id.toString();
+    });
+
+    describe("auth", () => {
+      it("should return an 401 if no token is provided", async () => {
+        const result = await request(server)
+          .post("/api/synchronisations/" + syncStatusId + "/status")
+          .send(syncStatus);
+
+        expect(result.status).toBe(401);
+        expect(result.error.text).toMatch(/access denied/i);
+      });
+
+      it("should return an 401 if an empty token is provided", async () => {
+        userToken = "";
+        const result = await executeStatus(syncStatusId);
+
+        expect(result.status).toBe(401);
+        expect(result.error.text).toMatch(/access denied/i);
+      });
+
+      it("should return an 401 if an invalid token", async () => {
+        userToken = "a";
+        const result = await executeStatus(syncStatusId);
+
+        expect(result.status).toBe(401);
+        expect(result.error.text).toMatch(/Invalid token/i);
+      });
+
+      it("should return an 401 if old token is provided", async () => {
+        userToken = "5dd65bccd4387dc776cdAAAA";
+        const result = await executeStatus(syncStatusId);
+
+        expect(result.status).toBe(401);
+        expect(result.error.text).toMatch(/Invalid token/i);
+      });
+    });
+
+    describe("id errors", () => {
+      it("should return an 400 if sync id is not found", async () => {
+        const result = await executeStatus("5dd65bccd4387dc776cdAAAA");
+
+        expect(result.status).toBe(400);
+        expect(result.error.text).toMatch(
+          /No Synchronisation found with ID.*/i
+        );
+      });
+
+      it("should return an 400 if sync id is not valid", async () => {
+        const result = await executeStatus("123");
+
+        expect(result.status).toBe(400);
+        expect(result.error.text).toMatch(/Invalid ID/i);
+      });
+    });
+
+    it("should return an 400 if no status is provided", async () => {
+      const result = await request(server)
+        .post("/api/synchronisations/" + syncStatusId + "/status")
+        .set("x-auth-token", userToken)
+        .send();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid status value/i);
+    });
+
+    it("should return an 400 if an invalid status is provided", async () => {
+      const result = await request(server)
+        .post("/api/synchronisations/" + syncStatusId + "/status")
+        .set("x-auth-token", userToken)
+        .send({ status: "a" });
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/Invalid status value/i);
+    });
+
+    it("should return 200 and the sync with status true", async () => {
+      const result = await executeStatus(syncStatusId);
+
+      expect(result.status).toBe(200);
+      expect(result.body.status).toBe(syncStatus.status);
     });
   });
 });
