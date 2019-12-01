@@ -5,6 +5,7 @@ const FTP = require("ftp");
 const ss = require("stream-string");
 const parseString = require("xml2js").parseString;
 const debug = require("debug")("app:wagoLib");
+const axios = require("axios");
 
 // Find all local waog devices in the network
 function find() {
@@ -346,7 +347,35 @@ function createArtiReadCommand(plc) {
   }
 }
 
-function getArtieValuesFromPlc(plc) {}
+function getArtiValuesFromPlc(plc) {
+  return new Promise((resolve, reject) => {
+    plc.files.forEach((file, fileIndex) => {
+      axios({
+        method: "post",
+        url: "http://" + plc.ip + "/plc/webvisu.htm",
+        data: file.artiReadCommand
+      })
+        .then(response => {
+          const data = response.data
+            .substring(1, response.data.length - 1)
+            .split("|");
+
+          plc.files[fileIndex].variables = plc.files[fileIndex].variables.map(
+            (variable, varIndex) => {
+              variable.value = data[varIndex];
+              return variable;
+            }
+          );
+
+          resolve(plc);
+        })
+        .catch(err => {
+          debug(err);
+          reject(new Error("Something broke while receiving plc data.", err));
+        });
+    });
+  });
+}
 
 module.exports.find = find;
 module.exports.getPlcInformation = getPlcInformation;
@@ -358,3 +387,4 @@ module.exports.getPlcXmlFileData = getPlcXmlFileData;
 module.exports.getAllPlcXmlData = getAllPlcXmlData;
 module.exports.getPlcDetails = getPlcDetails;
 module.exports.createArtiReadCommand = createArtiReadCommand;
+module.exports.getArtiValuesFromPlc = getArtiValuesFromPlc;
