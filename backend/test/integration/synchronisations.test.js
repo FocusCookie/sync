@@ -254,7 +254,7 @@ describe("Synchronisation Routes", () => {
     });
   });
 
-  describe("POST /:id", () => {
+  describe("POST", () => {
     describe("auth", () => {
       it("should return an 401 if no token is provided", async () => {
         const result = await request(server)
@@ -437,6 +437,7 @@ describe("Synchronisation Routes", () => {
           modules: [466, 496],
           files: []
         });
+
         synchronisationSchema.plcId = anotherPlc._id.toString();
 
         const result = await executePost(synchronisationSchema);

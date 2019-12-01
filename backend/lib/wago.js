@@ -316,6 +316,38 @@ function getPlcDetails(plc) {
   });
 }
 
+// prepare the post request string for reading the data
+function createArtiReadCommand(plc) {
+  if (!plc) {
+    return new Error("Invalid plc.");
+  } else {
+    if (!plc.files) {
+      return new Error("Invalid plc files.");
+    } else {
+      if (plc.files.length === 0) {
+        return plc;
+      } else {
+        //TODO: Check if each file variable contains an arti
+        plc.files.forEach((file, indexFile) => {
+          let command = "|0|";
+
+          command += file.variables.length + "|";
+
+          file.variables.forEach((variable, indexVariable) => {
+            command += indexVariable + "|" + variable.arti + "|";
+          });
+          debug(command);
+          plc.files[indexFile].artiReadCommand = command;
+        });
+
+        return plc;
+      }
+    }
+  }
+}
+
+function getArtieValuesFromPlc(plc) {}
+
 module.exports.find = find;
 module.exports.getPlcInformation = getPlcInformation;
 module.exports.getPlcs = getPlcs;
@@ -325,3 +357,4 @@ module.exports.generateArtiAdresses = generateArtiAdresses;
 module.exports.getPlcXmlFileData = getPlcXmlFileData;
 module.exports.getAllPlcXmlData = getAllPlcXmlData;
 module.exports.getPlcDetails = getPlcDetails;
+module.exports.createArtiReadCommand = createArtiReadCommand;

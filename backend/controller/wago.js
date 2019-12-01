@@ -1,6 +1,7 @@
 const debug = require("debug")("app:wagoController");
 const { Wago, validate } = require("../models/wago");
 var objectID = require("mongodb").ObjectID;
+const wagoLib = require("../lib/wago");
 
 module.exports.createWago = function(plc) {
   return new Promise((resolve, reject) => {
@@ -12,12 +13,18 @@ module.exports.createWago = function(plc) {
         if (existingPlc.length !== 0) {
           reject(`${plc.ip} is already registered.`);
         } else {
+          try {
+            plc = wagoLib.createArtiReadCommand(plc);
+            debug("with command IP: ", plc.ip);
+          } catch (ex) {
+            debug(ex);
+            reject(ex);
+          }
           const newPlc = new Wago(plc);
           newPlc
             .save()
             .then(result => {
               debug(`PLC with IP ${plc.ip} stored.`);
-              debug(result);
               resolve(result);
             })
             .catch(err => {
@@ -50,13 +57,17 @@ module.exports.editWago = function(id, plc) {
         reject(validation);
       } else {
         Wago.findOne({ _id: id }).then(existingPlc => {
-          debug(existingPlc);
           if (!existingPlc) {
             reject(new Error(`No PLC found with ID: ${id}`));
           } else {
             Wago.findOne({ ip: plc.ip })
               .then(existingIp => {
-                if (!existingIp) {
+                if (!existingIp || existingIp._id.toString() === id) {
+                  try {
+                    plc = wagoLib.createArtiReadCommand(plc);
+                  } catch (ex) {
+                    reject(ex);
+                  }
                   Wago.findOneAndUpdate({ _id: id }, plc)
                     .then(update => {
                       update.save().then(() => {
@@ -97,7 +108,6 @@ module.exports.deleteWago = function(id) {
   return new Promise((resolve, reject) => {
     if (objectID.isValid(id)) {
       Wago.findOne({ _id: id }).then(existingPlc => {
-        debug(existingPlc);
         if (!existingPlc) {
           reject(new Error(`No PLC found with ID: ${id}`));
         } else {
