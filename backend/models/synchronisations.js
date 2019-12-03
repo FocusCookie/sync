@@ -2,6 +2,8 @@ const Joi = require("@hapi/joi");
 Joi.objectId = require("joi-objectid")(Joi);
 const mongoose = require("mongoose");
 
+let synchronisationSetIntervals = [];
+
 const synchronisationSchema = new mongoose.Schema({
   plcId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -49,6 +51,41 @@ function validate(synchronisation) {
   });
 
   return schema.validate(synchronisation);
+}
+
+function createInterval(sync) {
+  const temp = setInterval(() => {
+    console.log("Sync ID " + sync._id);
+    console.log("interval ID " + temp);
+    console.log("time " + sync.interval);
+  }, sync.interval);
+
+  const result = {
+    synchronisationId: sync._id,
+    intervalId: temp,
+    intervalTime: sync.interval
+  };
+
+  synchronisationSetIntervals.push(result);
+
+  return result;
+}
+
+function getIntervals() {
+  return synchronisationSetIntervals;
+}
+
+function deleteInterval(syncId) {
+  const toDelete = synchronisationSetIntervals.find(
+    element => element.synchronisationId === syncId
+  );
+  const toDeleteIndex = synchronisationSetIntervals.findIndex(
+    element => element.synchronisationId === syncId
+  );
+
+  clearInterval(toDelete.intervalId);
+  synchronisationSetIntervals.splice(toDeleteIndex, 1);
+  return synchronisationSetIntervals;
 }
 
 module.exports.validate = validate;
