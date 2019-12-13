@@ -2,6 +2,8 @@ const Joi = require("@hapi/joi");
 Joi.objectId = require("joi-objectid")(Joi);
 const mongoose = require("mongoose");
 const debug = require("debug")("app:syncModel");
+var objectID = require("mongodb").ObjectID;
+const AWS = require("aws-iot-device-sdk");
 
 let synchronisationSetIntervals = [];
 
@@ -79,21 +81,45 @@ function createInterval(sync) {
         );
         return new Error("Synchronisation is already active.");
       } else {
-        const temp = setInterval(() => {
-          console.log("Sync ID " + sync._id);
-          console.log("interval ID " + temp);
-          console.log("time " + sync.interval);
-        }, sync.interval);
+        if (
+          objectID.isValid(sync._id) &&
+          objectID.isValid(sync.plcId) &&
+          objectID.isValid(sync.cloudOptionsId)
+        ) {
+          const temp = setInterval(() => {
+            console.log("Sync ID " + sync._id);
+            console.log("interval ID " + temp);
+            console.log("time " + sync.interval);
 
-        const result = {
-          synchronisationId: sync._id,
-          intervalInstance: temp,
-          intervalTime: sync.interval
-        };
+            //create aws instance
+            if (sync.cloudProvider === "aws") {
+              // create aws instance
+              const config = Synchronisation.cloudOptionsId;
 
-        synchronisationSetIntervals.push(result);
+              const thingsInstance = AWS.device();
+            }
 
-        return result;
+            /* "config": {
+              "keyPath": "./certs/aws/4f4cb36ecf-private.pem.key",
+              "certPath": "./certs/aws/4f4cb36ecf-certificate.pem.crt",
+              "caPath": "./certs/aws/AmazonRootCA1.pem",
+              "clientId": "750-831",
+              "host": "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
+            }, */
+          }, sync.interval);
+
+          const result = {
+            synchronisationId: sync._id,
+            intervalInstance: temp,
+            intervalTime: sync.interval
+          };
+
+          synchronisationSetIntervals.push(result);
+
+          return result;
+        } else {
+          return new Error("Invalid snynchronisation, plc or cloudOptions id.");
+        }
       }
     }
   }
