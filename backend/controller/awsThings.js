@@ -17,30 +17,25 @@ module.exports.createThing = function(thingSchema) {
             );
           } else {
             const newThing = new AwsThing(thingSchema);
-            bcrypt.genSalt(10).then(salt => {
-              bcrypt.hash(newThing.privateKey, salt).then(hashedPrivateKey => {
-                newThing.privateKey = hashedPrivateKey;
 
-                newThing
-                  .save()
-                  .then(result => {
-                    debug(
-                      `AWS Thing for thing ${newThing.thingName} successfully created created`
-                    );
-                    debug(newThing);
-                    resolve(result);
-                  })
-                  .catch(err => {
-                    debug(err);
-                    reject(
-                      new Error(
-                        "Something broke while creating AWS Thing - Storing to DB",
-                        err
-                      )
-                    );
-                  });
+            newThing
+              .save()
+              .then(result => {
+                debug(
+                  `AWS Thing for thing ${newThing.thingName} successfully created created`
+                );
+                debug(newThing);
+                resolve(result);
+              })
+              .catch(err => {
+                debug(err);
+                reject(
+                  new Error(
+                    "Something broke while creating AWS Thing - Storing to DB",
+                    err
+                  )
+                );
               });
-            });
           }
         })
         .catch(err => {

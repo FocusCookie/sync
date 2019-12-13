@@ -48,24 +48,7 @@ function validate(thing) {
 
   thing = schema.validate(thing);
 
-  //TODO: add better detailed error handling, return which file is invalid
-  if (!thing.error) {
-    if (
-      thing.value.certificate.includes("-----BEGIN CERTIFICATE-----") &&
-      thing.value.certificate.includes("-----END CERTIFICATE-----") &&
-      thing.value.caChain.includes("-----BEGIN CERTIFICATE-----") &&
-      thing.value.caChain.includes("-----END CERTIFICATE-----") &&
-      thing.value.privateKey.includes("-----BEGIN RSA PRIVATE KEY-----") &&
-      thing.value.privateKey.includes("-----END RSA PRIVATE KEY-----")
-    ) {
-      return thing;
-    } else {
-      thing.error = "Invalid thing Files";
-      return thing;
-    }
-  } else {
-    return thing;
-  }
+  return thing;
 }
 
 module.exports.validate = validate;
