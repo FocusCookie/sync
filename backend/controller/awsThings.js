@@ -1,9 +1,11 @@
 const debug = require("debug")("app:awsThingController");
 const { AwsThing, validate } = require("../models/awsThings");
-const bcrypt = require("bcrypt");
+const fs = require("fs");
 var objectID = require("mongodb").ObjectID;
 
 module.exports.createThing = function(thingSchema) {
+  thingSchema = { thingName: thingSchema.thingName, host: thingSchema.host };
+
   return new Promise((resolve, reject) => {
     const validation = validate(thingSchema);
     if (validation.error) {
@@ -50,7 +52,6 @@ module.exports.getThings = function(id) {
   return new Promise((resolve, reject) => {
     if (id) {
       return AwsThing.findOne({ _id: id })
-        .select("-privateKey")
         .then(result => {
           debug("result ", result);
           if (!result) {
@@ -64,7 +65,6 @@ module.exports.getThings = function(id) {
         });
     } else {
       return AwsThing.find()
-        .select("-privateKey")
         .then(result => {
           resolve(result);
         })
@@ -170,6 +170,99 @@ module.exports.deleteThing = function(id) {
                   `Something broke while deleting AWS Thing with ID: ${id}`,
                   err
                 )
+              );
+            });
+        }
+      });
+    } else {
+      reject(new Error("Invalid ID"));
+    }
+  });
+};
+
+module.exports.addCertsToThing = function(id, certs) {
+  return new Promise((resolve, reject) => {
+    if (objectID.isValid(id)) {
+      AwsThing.findOne({ _id: id }).then(existingThing => {
+        if (!existingThing) {
+          reject(new Error(`No Thing found with ID: ${id}`));
+        } else {
+          AwsThing.findOneAndUpdate({ _id: id }, certs)
+            .then(thing => {
+              //check if thing has already certs if so delete them before store the new one
+              if (thing.certificate || thing.caChain || thing.privateKey) {
+                try {
+                  fs.unlinkSync(thing.certificate);
+                  fs.unlinkSync(thing.caChain);
+                  fs.unlinkSync(thing.privateKey);
+                } catch (err) {
+                  debug(err);
+                }
+              }
+
+              thing.save().then(() => {
+                AwsThing.findOne({ _id: id }).then(result => {
+                  resolve(result);
+                });
+              });
+            })
+            .catch(err => {
+              debug("Something broke while updating AWS Thing", err);
+              reject(
+                new Error("Something broke while updating AWS Thing", err)
+              );
+            });
+        }
+      });
+    } else {
+      reject(new Error("Invalid ID"));
+    }
+  });
+};
+
+module.exports.deleteCertsFromThing = function(id) {
+  return new Promise((resolve, reject) => {
+    if (objectID.isValid(id)) {
+      AwsThing.findOne({ _id: id }).then(existingThing => {
+        if (!existingThing) {
+          reject(new Error(`No Thing found with ID: ${id}`));
+        } else {
+          AwsThing.updateOne(
+            { _id: id },
+            {
+              $set: {
+                thingName: existingThing.thingName,
+                host: existingThing.host
+              },
+              $unset: {
+                certificate: undefined,
+                caChain: undefined,
+                privateKey: undefined
+              }
+            }
+          )
+            .then(result => {
+              if (
+                existingThing.certificate ||
+                existingThing.caChain ||
+                existingThing.privateKey
+              ) {
+                try {
+                  fs.unlinkSync(existingThing.certificate);
+                  fs.unlinkSync(existingThing.caChain);
+                  fs.unlinkSync(existingThing.privateKey);
+                } catch (err) {
+                  debug(err);
+                }
+              }
+              AwsThing.findOne({ _id: id }).then(updatedResult => {
+                resolve(updatedResult);
+              });
+            })
+            .catch(err => {
+              debug("Something broke while updating AWS Thing", err);
+              reject(
+                new Error("Something broke while updating AWS Thing", err)
               );
             });
         }

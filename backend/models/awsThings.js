@@ -15,16 +15,13 @@ const thingSchema = new mongoose.Schema({
     maxlength: 255
   },
   certificate: {
-    type: String,
-    required: true
+    type: String
   },
   caChain: {
-    type: String,
-    required: true
+    type: String
   },
   privateKey: {
-    type: String,
-    required: true
+    type: String
   },
   created: { type: Date, default: Date.now }
 });
@@ -41,9 +38,9 @@ function validate(thing) {
       .min(10)
       .max(255)
       .required(),
-    certificate: Joi.string().required(),
-    caChain: Joi.string().required(),
-    privateKey: Joi.string().required()
+    certificate: Joi.string(),
+    caChain: Joi.string(),
+    privateKey: Joi.string()
   });
 
   thing = schema.validate(thing);
