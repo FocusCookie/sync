@@ -160,11 +160,23 @@ module.exports.deleteThing = function(id) {
         if (!existingThing) {
           reject(new Error(`No AWS Thing found with ID: ${id}`));
         } else {
-          AwsThing.deleteOne({ _id: id })
+          this.deleteCertsFromThing(id)
             .then(() => {
-              resolve(`Successfully deleted AWS Thing with ID: ${id}`);
+              AwsThing.deleteOne({ _id: id })
+                .then(() => {
+                  resolve(`Successfully deleted AWS Thing with ID: ${id}`);
+                })
+                .catch(err => {
+                  reject(
+                    new Error(
+                      `Something broke while deleting AWS Thing with ID: ${id}`,
+                      err
+                    )
+                  );
+                });
             })
             .catch(err => {
+              debug(err);
               reject(
                 new Error(
                   `Something broke while deleting AWS Thing with ID: ${id}`,

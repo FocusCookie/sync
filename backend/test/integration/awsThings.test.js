@@ -12,22 +12,7 @@ describe("AWS Routes", () => {
     server = require("../../app");
     thingSchema = {
       thingName: "750-831",
-      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-      certificate: `
-    -----BEGIN CERTIFICATE-----
-    certificate CONTENT
-    -----END CERTIFICATE-----
-    `,
-      caChain: `
-    -----BEGIN CERTIFICATE-----
-    CA CHAIN CONTENT
-    -----END CERTIFICATE-----
-    `,
-      privateKey: `
-    -----BEGIN RSA PRIVATE KEY-----
-    Private KEY content
-    -----END RSA PRIVATE KEY-----
-    `
+      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
     };
     userToken = new User({ isAdmin: false }).generateToken();
   });
@@ -124,8 +109,6 @@ describe("AWS Routes", () => {
       expect(result.body.length).toBe(2);
       expect(result.body[0]).toHaveProperty("_id");
       expect(result.body[1]).toHaveProperty("_id");
-      expect(result.body[0]).not.toHaveProperty("privateKey");
-      expect(result.body[0]).not.toHaveProperty("privateKey");
     });
   });
 
@@ -196,7 +179,6 @@ describe("AWS Routes", () => {
 
       expect(result.body).toHaveProperty("_id");
       expect(result.body._id).toMatch(storedThing._id.toString());
-      expect(result.body).not.toHaveProperty("privateKey");
     });
   });
 
@@ -235,6 +217,14 @@ describe("AWS Routes", () => {
     });
 
     // ThingName
+    it("should return 400 when thingname is already registered", async () => {
+      await executePostThing();
+      const result = await executePostThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/already registered/i);
+    });
+
     it("should return 400 if thingName is missing ", async () => {
       delete thingSchema.thingName;
       const result = await executePostThing();
@@ -322,137 +312,6 @@ describe("AWS Routes", () => {
       );
     });
 
-    // certificate
-    it("should return 400 if certificate is not provided ", async () => {
-      delete thingSchema.certificate;
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is required/i);
-    });
-
-    it("should return 400 if certificate is empty ", async () => {
-      thingSchema.certificate = "";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is not allowed to be empty/i);
-    });
-
-    it("should return 400 if certificate is invalid ", async () => {
-      thingSchema.certificate = "aaa";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return 400 if certificate does not contain BEGIN CERTIFICATE", async () => {
-      thingSchema.certificate = "a -----END CERTIFICATE-----";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return 400 if certificate does not contain END CERTIFICATE", async () => {
-      thingSchema.certificate = "-----BEGIN CERTIFICATE----- a";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    // CA CHAIN
-    it("should return 400 if caChain is not provided ", async () => {
-      delete thingSchema.caChain;
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is required/i);
-    });
-
-    it("should return 400 if caChain is empty ", async () => {
-      thingSchema.caChain = "";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is not allowed to be empty/i);
-    });
-
-    it("should return 400 if caChain is invalid ", async () => {
-      thingSchema.caChain = "aaa";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if caChain does not contain BEGIN CERTIFICATE", async () => {
-      thingSchema.caChain = "a -----END CERTIFICATE-----";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if caChain does not contain END CERTIFICATE", async () => {
-      thingSchema.caChain = "-----BEGIN CERTIFICATE----- a";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    // CA CHAIN
-    it("should return 400 if privateKey is not provided ", async () => {
-      delete thingSchema.privateKey;
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is required/i);
-    });
-
-    it("should return 400 if privateKey is empty ", async () => {
-      thingSchema.privateKey = "";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is not allowed to be empty/i);
-    });
-
-    it("should return 400 if privateKey is invalid ", async () => {
-      thingSchema.privateKey = "aaa";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if privateKey does not contain BEGIN CERTIFICATE", async () => {
-      thingSchema.privateKey = "a -----END RSA PRIVATE KEY-----";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if privateKey does not contain END CERTIFICATE", async () => {
-      thingSchema.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return 400 when thingname is already registered", async () => {
-      await executePostThing();
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/already registered/i);
-    });
-
     it("should return 200 and the result should contain _id property", async () => {
       const result = await executePostThing();
 
@@ -465,22 +324,7 @@ describe("AWS Routes", () => {
     beforeEach(async () => {
       thingSchema = {
         thingName: "EDIT 750-831",
-        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-        certificate: `
-  -----BEGIN CERTIFICATE-----
-  EDIT certificate CONTENT
-  -----END CERTIFICATE-----
-  `,
-        caChain: `
-  -----BEGIN CERTIFICATE-----
-  EDIT CA CHAIN CONTENT
-  -----END CERTIFICATE-----
-  `,
-        privateKey: `
-  -----BEGIN RSA PRIVATE KEY-----
-  EDIT Private KEY content
-  -----END RSA PRIVATE KEY-----
-  `
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
       };
 
       storedThing = await awsThingsController.createThing(thingSchema);
@@ -562,6 +406,14 @@ describe("AWS Routes", () => {
         /less than or equal to 255 characters/i
       );
     });
+    it("should return 400 when thingname is already registered", async () => {
+      thingSchema.thingName = "750-831";
+      await awsThingsController.createThing(thingSchema);
+      const result = await executePutThing();
+
+      expect(result.status).toBe(400);
+      expect(result.error.text).toMatch(/already registered/i);
+    });
 
     // Host
     it("should return 400 if host is missing ", async () => {
@@ -605,138 +457,6 @@ describe("AWS Routes", () => {
       expect(result.error.text).toMatch(
         /less than or equal to 255 characters/i
       );
-    });
-
-    // certificate
-    it("should return 400 if certificate is not provided ", async () => {
-      delete thingSchema.certificate;
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is required/i);
-    });
-
-    it("should return 400 if certificate is empty ", async () => {
-      thingSchema.certificate = "";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is not allowed to be empty/i);
-    });
-
-    it("should return 400 if certificate is invalid ", async () => {
-      thingSchema.certificate = "aaa";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return 400 if certificate does not contain BEGIN CERTIFICATE", async () => {
-      thingSchema.certificate = "a -----END CERTIFICATE-----";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return 400 if certificate does not contain END CERTIFICATE", async () => {
-      thingSchema.certificate = "-----BEGIN CERTIFICATE----- a";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    // CA CHAIN
-    it("should return 400 if caChain is not provided ", async () => {
-      delete thingSchema.caChain;
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is required/i);
-    });
-
-    it("should return 400 if caChain is empty ", async () => {
-      thingSchema.caChain = "";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is not allowed to be empty/i);
-    });
-
-    it("should return 400 if caChain is invalid ", async () => {
-      thingSchema.caChain = "aaa";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if caChain does not contain BEGIN CERTIFICATE", async () => {
-      thingSchema.caChain = "a -----END CERTIFICATE-----";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if caChain does not contain END CERTIFICATE", async () => {
-      thingSchema.caChain = "-----BEGIN CERTIFICATE----- a";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    // CA CHAIN
-    it("should return 400 if privateKey is not provided ", async () => {
-      delete thingSchema.privateKey;
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is required/i);
-    });
-
-    it("should return 400 if privateKey is empty ", async () => {
-      thingSchema.privateKey = "";
-      const result = await executePostThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/is not allowed to be empty/i);
-    });
-
-    it("should return 400 if privateKey is invalid ", async () => {
-      thingSchema.privateKey = "aaa";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if privateKey does not contain BEGIN CERTIFICATE", async () => {
-      thingSchema.privateKey = "a -----END RSA PRIVATE KEY-----";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return400  if privateKey does not contain END CERTIFICATE", async () => {
-      thingSchema.privateKey = "-----BEGIN RSA PRIVATE KEY----- a";
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/invalid/i);
-    });
-
-    it("should return 400 when thingname is already registered", async () => {
-      thingSchema.thingName = "750-831";
-      await awsThingsController.createThing(thingSchema);
-      const result = await executePutThing();
-
-      expect(result.status).toBe(400);
-      expect(result.error.text).toMatch(/already registered/i);
     });
 
     it("should return 200 and the result should contain _id property", async () => {
