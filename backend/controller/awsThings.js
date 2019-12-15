@@ -254,18 +254,20 @@ module.exports.deleteCertsFromThing = function(id) {
             }
           )
             .then(result => {
-              if (
-                existingThing.certificate ||
-                existingThing.caChain ||
-                existingThing.privateKey
-              ) {
-                try {
-                  fs.unlinkSync(existingThing.certificate);
-                  fs.unlinkSync(existingThing.caChain);
-                  fs.unlinkSync(existingThing.privateKey);
-                } catch (err) {
-                  debug(err);
-                }
+              try {
+                fs.unlinkSync(existingThing.certificate);
+              } catch (err) {
+                debug(err);
+              }
+              try {
+                fs.unlinkSync(existingThing.caChain);
+              } catch (err) {
+                debug(err);
+              }
+              try {
+                fs.unlinkSync(existingThing.privateKey);
+              } catch (err) {
+                debug(err);
               }
               AwsThing.findOne({ _id: id }).then(updatedResult => {
                 resolve(updatedResult);
