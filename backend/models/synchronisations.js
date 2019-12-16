@@ -4,6 +4,9 @@ const mongoose = require("mongoose");
 const debug = require("debug")("app:syncModel");
 var objectID = require("mongodb").ObjectID;
 const AWS = require("aws-iot-device-sdk");
+const { AwsThing } = require("./awsThings");
+const wagoLib = require("../lib/wago");
+const { Wago } = require("../models/wago");
 
 let synchronisationSetIntervals = [];
 
@@ -56,18 +59,18 @@ function validate(synchronisation) {
   return schema.validate(synchronisation);
 }
 
-function createInterval(sync) {
+function createIntervalInstance(sync) {
   if (!sync || typeof sync !== "object") {
     debug("Something broke while creating synchronisation setInterval");
     return new Error("Invalid synchronisation.");
   } else {
     if (
-      !sync.hasOwnProperty("status") ||
-      !sync.hasOwnProperty("_id") ||
-      !sync.hasOwnProperty("plcId") ||
-      !sync.hasOwnProperty("interval") ||
-      !sync.hasOwnProperty("cloudProvider") ||
-      !sync.hasOwnProperty("cloudOptionsId")
+      !"status" in sync ||
+      !"_id" in sync ||
+      !"plcId" in sync ||
+      !"interval" in sync ||
+      !"cloudProvider" in sync ||
+      !"cloudOptionsId" in sync
     ) {
       debug(
         "Some synchronisation property is missing while creating synchronisation setInterval",
@@ -86,37 +89,89 @@ function createInterval(sync) {
           objectID.isValid(sync.plcId) &&
           objectID.isValid(sync.cloudOptionsId)
         ) {
-          const temp = setInterval(() => {
-            console.log("Sync ID " + sync._id);
-            console.log("interval ID " + temp);
-            console.log("time " + sync.interval);
+          let config;
 
-            //create aws instance
-            if (sync.cloudProvider === "aws") {
-              // create aws instance
-              const config = Synchronisation.cloudOptionsId;
+          AwsThing.findOne({
+            _id: sync.cloudOptionsId
+          })
+            .then(cloudOptions => {
+              config = {
+                keyPath: cloudOptions.privateKey,
+                certPath: cloudOptions.certificate,
+                caPath: cloudOptions.caChain,
+                cliendId: cloudOptions.thingName,
+                host: cloudOptions.host
+              };
 
-              const thingsInstance = AWS.device();
-            }
+              Wago.findOne({ _id: sync.plcId }).then(plc => {
+                //create aws instance
+                if (sync.cloudProvider === "aws") {
+                  // create aws instance
 
-            /* "config": {
-              "keyPath": "./certs/aws/4f4cb36ecf-private.pem.key",
-              "certPath": "./certs/aws/4f4cb36ecf-certificate.pem.crt",
-              "caPath": "./certs/aws/AmazonRootCA1.pem",
-              "clientId": "750-831",
-              "host": "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
-            }, */
-          }, sync.interval);
+                  const thingsInstance = AWS.device(config);
 
-          const result = {
-            synchronisationId: sync._id,
-            intervalInstance: temp,
-            intervalTime: sync.interval
-          };
+                  thingsInstance.on("connect", () => {
+                    debug(
+                      `[AWS Instance]: for SyncId: ${sync._id}  is connected.`
+                    );
+                  });
 
-          synchronisationSetIntervals.push(result);
+                  thingsInstance.on("error", () => {
+                    debug(
+                      `[AWS Instance]: for SyncId: ${sync._id} error:`,
+                      err
+                    );
+                  });
 
-          return result;
+                  const temp = setInterval(() => {
+                    debug("setInterval Ping for syncId " + sync._id);
+
+                    wagoLib
+                      .getArtiValuesFromPlc(plc)
+                      .then(plcWithValues => {
+                        debug("Wago Values");
+                        plcWithValues.files.forEach(file => {
+                          file.variables.forEach(variable => {
+                            debug(
+                              config.cliendId +
+                                "/" +
+                                variable.prgName +
+                                "/" +
+                                variable.varName,
+                              JSON.stringify({ value: variable.value })
+                            );
+                            thingsInstance.publish(
+                              config.cliendId +
+                                "/" +
+                                variable.prgName +
+                                "/" +
+                                variable.varName,
+                              JSON.stringify({ value: variable.value })
+                            );
+                          });
+                        });
+                      })
+                      .catch(err => {
+                        debug("Something broke while receiving PLC data", err);
+                      });
+                  }, sync.interval);
+
+                  const result = {
+                    synchronisationId: sync._id,
+                    intervalInstance: temp,
+                    intervalTime: sync.interval,
+                    thingsInstance: thingsInstance
+                  };
+
+                  synchronisationSetIntervals.push(result);
+
+                  return result;
+                } else {
+                  return false;
+                }
+              });
+            })
+            .catch(err => debug("FIND ", err));
         } else {
           return new Error("Invalid snynchronisation, plc or cloudOptions id.");
         }
@@ -133,23 +188,36 @@ function deleteInterval(syncId) {
   if (!syncId) {
     return new Error("Invalid synchronisation id.");
   } else {
-    const toDelete = synchronisationSetIntervals.find(
-      element => element.synchronisationId === syncId
-    );
+    const toDelete = synchronisationSetIntervals.find(element => {
+      return element.synchronisationId.toString() === syncId;
+    });
     const toDeleteIndex = synchronisationSetIntervals.findIndex(
       element => element.synchronisationId === syncId
     );
+    debug(synchronisationSetIntervals);
+    debug("ID", syncId);
+
+    toDelete.thingsInstance.removeListener("connect", () => {
+      debug(`[AWS Instance]: for SyncId: ${sync._id}  is connected.`);
+    });
+    toDelete.thingsInstance.removeListener("error", () => {
+      debug(`[AWS Instance]: for SyncId: ${sync._id} error:`, err);
+    });
+
+    delete toDelete.thingsInstance;
 
     clearInterval(toDelete.intervalInstance);
-    debug("befor", synchronisationSetIntervals);
+    debug("before", synchronisationSetIntervals);
+
     synchronisationSetIntervals.splice(toDeleteIndex, 1);
     debug("after", synchronisationSetIntervals);
+
     return synchronisationSetIntervals;
   }
 }
 
 module.exports.validate = validate;
 module.exports.Synchronisation = Synchronisation;
-module.exports.createInterval = createInterval;
+module.exports.createIntervalInstance = createIntervalInstance;
 module.exports.getIntervals = getIntervals;
 module.exports.deleteInterval = deleteInterval;

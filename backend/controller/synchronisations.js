@@ -1,5 +1,10 @@
 const debug = require("debug")("app:synchronisationsController");
-const { Synchronisation, validate } = require("../models/synchronisations");
+const {
+  Synchronisation,
+  validate,
+  createIntervalInstance,
+  deleteInterval
+} = require("../models/synchronisations");
 const { Wago } = require("../models/wago");
 const { AwsThing } = require("../models/awsThings");
 var objectID = require("mongodb").ObjectID;
@@ -317,21 +322,32 @@ module.exports.updateSynchronisationStatus = function(id, status) {
           ) {
             reject(new Error("Invalid status value."));
           } else {
-            foundSynchronisation.status = status;
-            foundSynchronisation
-              .save()
-              .then(result => {
-                resolve(result);
-              })
-              .catch(err => {
-                debug(err);
-                reject(
-                  new Error(
-                    "Something broke while updating Synchronisation Status.",
-                    err
-                  )
-                );
-              });
+            if (foundSynchronisation.status !== status) {
+              if (status) {
+                createIntervalInstance(foundSynchronisation);
+              }
+              if (foundSynchronisation.status && !status) {
+                deleteInterval(id);
+              }
+
+              foundSynchronisation.status = status;
+              foundSynchronisation
+                .save()
+                .then(result => {
+                  resolve(result);
+                })
+                .catch(err => {
+                  debug(err);
+                  reject(
+                    new Error(
+                      "Something broke while updating Synchronisation Status.",
+                      err
+                    )
+                  );
+                });
+            } else {
+              resolve(foundSynchronisation);
+            }
           }
         }
       });
