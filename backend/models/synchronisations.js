@@ -79,9 +79,7 @@ function createIntervalInstance(sync) {
       return new Error("Invalid synchronisation.");
     } else {
       if (sync.status === true) {
-        debug(
-          "Something broke while creating synchronisation status of given sync is true"
-        );
+        debug("Synchronisation is already active.");
         return new Error("Synchronisation is already active.");
       } else {
         if (
