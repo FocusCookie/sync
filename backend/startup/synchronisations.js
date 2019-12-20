@@ -1,10 +1,6 @@
 const debug = require("debug")("app:startupSynchronisations");
 const SyncModel = require("../models/synchronisations");
 
-// get all syncy in database
-// check the status state
-// if true dann create intervall instances for it
-
 module.exports = async function() {
   SyncModel.Synchronisation.find({})
     .then(syncs => {

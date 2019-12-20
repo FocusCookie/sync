@@ -60,122 +60,154 @@ function validate(synchronisation) {
 }
 
 function createIntervalInstance(sync) {
-  if (!sync || typeof sync !== "object") {
-    debug("Something broke while creating synchronisation setInterval");
-    return new Error("Invalid synchronisation.");
-  } else {
-    if (
-      !"status" in sync ||
-      !"_id" in sync ||
-      !"plcId" in sync ||
-      !"interval" in sync ||
-      !"cloudProvider" in sync ||
-      !"cloudOptionsId" in sync
-    ) {
-      debug(
-        "Some synchronisation property is missing while creating synchronisation setInterval",
-        sync
-      );
-      return new Error("Invalid synchronisation.");
+  return new Promise((resolve, reject) => {
+    if (!sync || typeof sync !== "object") {
+      debug("Something broke while creating synchronisation setInterval");
+      reject(new Error("Invalid synchronisation."));
     } else {
-      if (sync.status === true) {
-        debug("Synchronisation is already active.");
-        return new Error("Synchronisation is already active.");
+      if (
+        !"status" in sync ||
+        !"_id" in sync ||
+        !"plcId" in sync ||
+        !"interval" in sync ||
+        !"cloudProvider" in sync ||
+        !"cloudOptionsId" in sync
+      ) {
+        debug(
+          "Some synchronisation property is missing while creating synchronisation setInterval",
+          sync
+        );
+        reject(new Error("Invalid synchronisation - missing properties."));
       } else {
-        if (
-          objectID.isValid(sync._id) &&
-          objectID.isValid(sync.plcId) &&
-          objectID.isValid(sync.cloudOptionsId)
-        ) {
-          let config;
+        if (sync.status === true) {
+          debug("Synchronisation is already active.");
+          reject(new Error("Synchronisation is already active."));
+        } else {
+          if (
+            objectID.isValid(sync._id) &&
+            objectID.isValid(sync.plcId) &&
+            objectID.isValid(sync.cloudOptionsId)
+          ) {
+            let config;
 
-          AwsThing.findOne({
-            _id: sync.cloudOptionsId
-          })
-            .then(cloudOptions => {
-              config = {
-                keyPath: cloudOptions.privateKey,
-                certPath: cloudOptions.certificate,
-                caPath: cloudOptions.caChain,
-                cliendId: cloudOptions.thingName,
-                host: cloudOptions.host
-              };
+            AwsThing.findOne({
+              _id: sync.cloudOptionsId
+            })
+              .then(cloudOptions => {
+                config = {
+                  keyPath: cloudOptions.privateKey,
+                  certPath: cloudOptions.certificate,
+                  caPath: cloudOptions.caChain,
+                  clientId: cloudOptions.thingName,
+                  host: cloudOptions.host
+                };
 
-              Wago.findOne({ _id: sync.plcId }).then(plc => {
-                //create aws instance
-                if (sync.cloudProvider === "aws") {
-                  // create aws instance
+                Wago.findOne({ _id: sync.plcId })
+                  .then(plc => {
+                    if (sync.cloudProvider === "aws") {
+                      const thingsInstance = AWS.device(config);
 
-                  const thingsInstance = AWS.device(config);
+                      thingsInstance.on("connect", () => {
+                        debug(
+                          `[AWS Instance]: for SyncId: ${sync._id}  is connected.`
+                        );
+                      });
 
-                  thingsInstance.on("connect", () => {
-                    debug(
-                      `[AWS Instance]: for SyncId: ${sync._id}  is connected.`
-                    );
-                  });
+                      thingsInstance.on("error", () => {
+                        debug(
+                          `[AWS Instance]: for SyncId: ${sync._id} error:`,
+                          err
+                        );
+                      });
 
-                  thingsInstance.on("error", () => {
-                    debug(
-                      `[AWS Instance]: for SyncId: ${sync._id} error:`,
-                      err
-                    );
-                  });
-
-                  const temp = setInterval(() => {
-                    debug("setInterval Ping for syncId " + sync._id);
-
-                    wagoLib
-                      .getArtiValuesFromPlc(plc)
-                      .then(plcWithValues => {
-                        debug("Wago Values");
-                        plcWithValues.files.forEach(file => {
-                          file.variables.forEach(variable => {
+                      const temp = setInterval(() => {
+                        wagoLib
+                          .getArtiValuesFromPlc(plc)
+                          .then(plcWithValues => {
+                            debug("Wago Values");
+                            plcWithValues.files.forEach(file => {
+                              file.variables.forEach(variable => {
+                                if (variable.prgName) {
+                                  debug(
+                                    config.clientId +
+                                      "/" +
+                                      variable.prgName +
+                                      "/" +
+                                      variable.varName,
+                                    JSON.stringify({ value: variable.value })
+                                  );
+                                  thingsInstance.publish(
+                                    config.clientId +
+                                      "/" +
+                                      variable.prgName +
+                                      "/" +
+                                      variable.varName,
+                                    JSON.stringify({ value: variable.value })
+                                  );
+                                } else {
+                                  debug(
+                                    config.clientId + "/" + variable.varName,
+                                    JSON.stringify({ value: variable.value })
+                                  );
+                                  thingsInstance.publish(
+                                    config.clientId + "/" + variable.varName,
+                                    JSON.stringify({ value: variable.value })
+                                  );
+                                }
+                              });
+                            });
+                          })
+                          .catch(err => {
                             debug(
-                              config.cliendId +
-                                "/" +
-                                variable.prgName +
-                                "/" +
-                                variable.varName,
-                              JSON.stringify({ value: variable.value })
-                            );
-                            thingsInstance.publish(
-                              config.cliendId +
-                                "/" +
-                                variable.prgName +
-                                "/" +
-                                variable.varName,
-                              JSON.stringify({ value: variable.value })
+                              "Something broke while receiving PLC data",
+                              err
                             );
                           });
-                        });
-                      })
-                      .catch(err => {
-                        debug("Something broke while receiving PLC data", err);
-                      });
-                  }, sync.interval);
+                      }, sync.interval);
 
-                  const result = {
-                    synchronisationId: sync._id,
-                    intervalInstance: temp,
-                    intervalTime: sync.interval,
-                    thingsInstance: thingsInstance
-                  };
+                      const result = {
+                        synchronisationId: sync._id,
+                        intervalInstance: temp,
+                        intervalTime: sync.interval,
+                        thingsInstance: thingsInstance
+                      };
 
-                  synchronisationSetIntervals.push(result);
+                      synchronisationSetIntervals.push(result);
 
-                  return result;
-                } else {
-                  return false;
-                }
+                      debug(
+                        "Created instance for SyncId: " +
+                          sync._id +
+                          " AWS Thing " +
+                          config.clientId
+                      );
+                      resolve(result);
+                    } else {
+                      resolve(null);
+                    }
+                  })
+                  .catch(err => {
+                    debug("Something broke while checking PLC of Sync", err);
+                    reject(
+                      new Error("Something broke while checking PLC of Sync")
+                    );
+                  });
+              })
+              .catch(err => {
+                debug("Thing findOne broke ", err);
+                reject(
+                  new Error("Something broke while checking cloud options ")
+                );
               });
-            })
-            .catch(err => debug("FIND ", err));
-        } else {
-          return new Error("Invalid snynchronisation, plc or cloudOptions id.");
+          } else {
+            debug("Invalid snynchronisation, plc or cloudOptions id.");
+            reject(
+              new Error("Invalid snynchronisation, plc or cloudOptions id.")
+            );
+          }
         }
       }
     }
-  }
+  });
 }
 
 function getIntervals() {

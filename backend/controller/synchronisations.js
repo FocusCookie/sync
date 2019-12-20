@@ -3,7 +3,8 @@ const {
   Synchronisation,
   validate,
   createIntervalInstance,
-  deleteInterval
+  deleteInterval,
+  getIntervals
 } = require("../models/synchronisations");
 const { Wago } = require("../models/wago");
 const { AwsThing } = require("../models/awsThings");
@@ -322,31 +323,60 @@ module.exports.updateSynchronisationStatus = function(id, status) {
           ) {
             reject(new Error("Invalid status value."));
           } else {
-            if (foundSynchronisation.status !== status) {
-              if (status) {
-                createIntervalInstance(foundSynchronisation);
-              }
-              if (foundSynchronisation.status && !status) {
-                deleteInterval(id);
-              }
-
-              foundSynchronisation.status = status;
-              foundSynchronisation
-                .save()
-                .then(result => {
-                  resolve(result);
+            if (foundSynchronisation.status !== status && status) {
+              debug(
+                "found status ",
+                foundSynchronisation.status +
+                  "     --    given status " +
+                  status
+              );
+              createIntervalInstance(foundSynchronisation)
+                .then(() => {
+                  debug("ready");
+                  foundSynchronisation.status = status;
+                  foundSynchronisation
+                    .save()
+                    .then(result => {
+                      resolve(result);
+                    })
+                    .catch(err => {
+                      debug("Updating the status failed ", err);
+                      reject(
+                        new Error(
+                          "Something broke while updating Synchronisation Status.",
+                          err
+                        )
+                      );
+                    });
                 })
                 .catch(err => {
-                  debug(err);
-                  reject(
-                    new Error(
-                      "Something broke while updating Synchronisation Status.",
-                      err
-                    )
-                  );
+                  debug("Something broke while creating instance ", err);
+                  reject(err);
                 });
             } else {
-              resolve(foundSynchronisation);
+              if (status) {
+                resolve(foundSynchronisation);
+              } else {
+                const intervallInstances = getIntervals();
+                if (intervallInstances.length !== 0) {
+                  deleteInterval(id);
+                }
+                foundSynchronisation.status = status;
+                foundSynchronisation
+                  .save()
+                  .then(result => {
+                    resolve(result);
+                  })
+                  .catch(err => {
+                    debug(err);
+                    reject(
+                      new Error(
+                        "Something broke while updating Synchronisation Status.",
+                        err
+                      )
+                    );
+                  });
+              }
             }
           }
         }
