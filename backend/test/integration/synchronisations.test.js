@@ -6,8 +6,9 @@ const { User } = require("../../models/users");
 const synchronisationsController = require("../../controller/synchronisations");
 const awsThingsController = require("../../controller/awsThings");
 const wagoController = require("../../controller/wago");
+const path = require("path");
+const fs = require("fs");
 
-let getId;
 let storedPlc;
 let storedAwsThing;
 let anotherStoredAwsThing;
@@ -16,6 +17,19 @@ let anotherStoredSync;
 let synchronisationSchema;
 let syncStatus = { status: true };
 let syncStatusId;
+
+const certsDirectory = path.join(__dirname, "../../", "certs/aws/");
+
+function deleteCerts() {
+  fs.readdir(certsDirectory, (err, files) => {
+    if (files.length > 0) {
+      files.forEach(file => {
+        fs.unlinkSync(certsDirectory + file);
+      });
+    }
+  });
+  return;
+}
 
 describe("Synchronisation Routes", () => {
   beforeEach(async () => {
@@ -45,22 +59,7 @@ describe("Synchronisation Routes", () => {
     });
     storedAwsThing = await awsThingsController.createThing({
       thingName: "750-831",
-      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-      certificate: `
-      -----BEGIN CERTIFICATE-----
-      certificate CONTENT
-      -----END CERTIFICATE-----
-      `,
-      caChain: `
-      -----BEGIN CERTIFICATE-----
-      CA CHAIN CONTENT
-      -----END CERTIFICATE-----
-      `,
-      privateKey: `
-      -----BEGIN RSA PRIVATE KEY-----
-      Private KEY content
-      -----END RSA PRIVATE KEY-----
-      `
+      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
     });
 
     synchronisationSchema = {
@@ -76,6 +75,7 @@ describe("Synchronisation Routes", () => {
     await Synchronisation.deleteMany({});
     await Wago.deleteMany({});
     await AwsThing.deleteMany({});
+    deleteCerts();
   });
 
   const executeGet = id => {
@@ -512,22 +512,7 @@ describe("Synchronisation Routes", () => {
 
       anotherStoredAwsThing = await awsThingsController.createThing({
         thingName: "750-880",
-        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-        certificate: `
-        -----BEGIN CERTIFICATE-----
-        certificate CONTENT
-        -----END CERTIFICATE-----
-        `,
-        caChain: `
-        -----BEGIN CERTIFICATE-----
-        CA CHAIN CONTENT
-        -----END CERTIFICATE-----
-        `,
-        privateKey: `
-        -----BEGIN RSA PRIVATE KEY-----
-        Private KEY content
-        -----END RSA PRIVATE KEY-----
-        `
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
       });
 
       synchronisationSchema = {
@@ -837,22 +822,7 @@ describe("Synchronisation Routes", () => {
 
         anotherStoredAwsThing = await awsThingsController.createThing({
           thingName: "750-333",
-          host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-          certificate: `
-          -----BEGIN CERTIFICATE-----
-          certificate CONTENT
-          -----END CERTIFICATE-----
-          `,
-          caChain: `
-          -----BEGIN CERTIFICATE-----
-          CA CHAIN CONTENT
-          -----END CERTIFICATE-----
-          `,
-          privateKey: `
-          -----BEGIN RSA PRIVATE KEY-----
-          Private KEY content
-          -----END RSA PRIVATE KEY-----
-          `
+          host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
         });
 
         const activeSchema = {
@@ -892,22 +862,7 @@ describe("Synchronisation Routes", () => {
 
       anotherStoredAwsThing = await awsThingsController.createThing({
         thingName: "750-333",
-        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-        certificate: `
-        -----BEGIN CERTIFICATE-----
-        certificate CONTENT
-        -----END CERTIFICATE-----
-        `,
-        caChain: `
-        -----BEGIN CERTIFICATE-----
-        CA CHAIN CONTENT
-        -----END CERTIFICATE-----
-        `,
-        privateKey: `
-        -----BEGIN RSA PRIVATE KEY-----
-        Private KEY content
-        -----END RSA PRIVATE KEY-----
-        `
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
       });
 
       synchronisationSchema = {
@@ -1007,22 +962,7 @@ describe("Synchronisation Routes", () => {
 
       anotherStoredAwsThing = await awsThingsController.createThing({
         thingName: "750-880",
-        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-        certificate: `
-        -----BEGIN CERTIFICATE-----
-        certificate CONTENT
-        -----END CERTIFICATE-----
-        `,
-        caChain: `
-        -----BEGIN CERTIFICATE-----
-        CA CHAIN CONTENT
-        -----END CERTIFICATE-----
-        `,
-        privateKey: `
-        -----BEGIN RSA PRIVATE KEY-----
-        Private KEY content
-        -----END RSA PRIVATE KEY-----
-        `
+        host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
       });
 
       const activeSchema = {
@@ -1135,11 +1075,76 @@ describe("Synchronisation Routes", () => {
       expect(result.error.text).toMatch(/Invalid status value/i);
     });
 
-    it("should return 200 and the sync with status true", async () => {
-      const result = await executeStatus(syncStatusId);
+    it("should return 400 if the sync is already active", async () => {
+      // add certs to awsThing
+      await request(server)
+        .post("/api/aws/things/" + storedAwsThing._id.toString() + "/certs")
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+          )
+        )
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+          )
+        )
+        .attach(
+          "certs",
+          path.join(__dirname, "../../../aws certs/750-831/AmazonRootCA1.pem")
+        )
+        .set("x-auth-token", userToken);
 
+      const result = await executeStatus(syncStatusId);
       expect(result.status).toBe(200);
       expect(result.body.status).toBe(syncStatus.status);
+      //disable synchronisation
+      if (result.status === 200) {
+        syncStatus = { status: true };
+        const activateAgain = await executeStatus(syncStatusId);
+
+        expect(activateAgain.status).toBe(200);
+      }
+    });
+
+    it("should return 200 and the sync with status true", async () => {
+      // add certs to awsThing
+      await request(server)
+        .post("/api/aws/things/" + storedAwsThing._id.toString() + "/certs")
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+          )
+        )
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+          )
+        )
+        .attach(
+          "certs",
+          path.join(__dirname, "../../../aws certs/750-831/AmazonRootCA1.pem")
+        )
+        .set("x-auth-token", userToken);
+
+      const result = await executeStatus(syncStatusId);
+      expect(result.status).toBe(200);
+      expect(result.body.status).toBe(syncStatus.status);
+      //disable synchronisation
+      if (result.status === 200) {
+        syncStatus = { status: false };
+        const disabled = await executeStatus(syncStatusId);
+
+        expect(disabled.status).toBe(200);
+      }
     });
   });
 });

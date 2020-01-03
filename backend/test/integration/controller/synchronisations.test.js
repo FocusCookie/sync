@@ -1,11 +1,16 @@
 const { AwsThing } = require("../../../models/awsThings");
+const { User } = require("../../../models/users");
 const awsThingsController = require("../../../controller/awsThings");
 const { Wago } = require("../../../models/wago");
 const wagoController = require("../../../controller/wago");
 const { Synchronisation } = require("../../../models/synchronisations");
 const synchronisationController = require("../../../controller/synchronisations");
+const request = require("supertest");
+const path = require("path");
+const fs = require("fs");
 
 let server;
+let userToken;
 
 // AWS Thing
 let awsThingPrivateKey;
@@ -24,35 +29,27 @@ let secondStoredPlc;
 let synchronisationSchema;
 let editSynchronisationSchema;
 
+const certsDirectory = path.join(__dirname, "../../../", "certs/aws/");
+
+function deleteCerts() {
+  fs.readdir(certsDirectory, (err, files) => {
+    if (files.length > 0) {
+      files.forEach(file => {
+        fs.unlinkSync(certsDirectory + file);
+      });
+    }
+  });
+  return;
+}
+
 describe("AWS Things Controller - integration test", () => {
   beforeEach(async () => {
     server = require("../../../app");
-
-    // AWS Thing
-    awsThingCertificate = `
------BEGIN CERTIFICATE-----
-CERTIFICATE CONTENT
------END CERTIFICATE-----
-`;
-
-    awsThingCaChain = `
------BEGIN CERTIFICATE-----
-CA CHAIN CONTENT
------END CERTIFICATE-----
-`;
-
-    awsThingPrivateKey = `
------BEGIN RSA PRIVATE KEY-----
-Private KEY content
------END RSA PRIVATE KEY-----
-`;
+    userToken = new User({ isAdmin: false }).generateToken();
 
     awsThing = {
       thingName: "750-831",
-      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com",
-      certificate: awsThingCertificate,
-      caChain: awsThingCaChain,
-      privateKey: awsThingPrivateKey
+      host: "afltduprllds9-ats.iot.us-east-2.amazonaws.com"
     };
     storedAwsThing = await awsThingsController.createThing(awsThing);
 
@@ -123,6 +120,7 @@ Private KEY content
     await Synchronisation.deleteMany({});
     await AwsThing.deleteMany({});
     await Wago.deleteMany({});
+    deleteCerts();
   });
 
   describe("createSynchronisation", () => {
@@ -984,19 +982,15 @@ Private KEY content
     });
 
     describe("id errors", () => {
-      it("should an invalid id error if invalid id is given", async () => {
-        const storedSync = await synchronisationController.createSynchronisation(
-          synchronisationSchema
-        );
-
+      it("should return an invalid id error if invalid id is given", async () => {
         await synchronisationController
-          .updateSynchronisationStatus(storedSync._id.toString(), true)
+          .updateSynchronisationStatus(false, true)
           .catch(err => {
             expect(err.message).toMatch(/Invalid ID/i);
           });
       });
 
-      it("should an invalid id error if given id is not accosiated with a sync", async () => {
+      it("should return an invalid id error if given id is not accosiated with a sync", async () => {
         await synchronisationController
           .updateSynchronisationStatus("5dd9956eeb5dfd2f93c2AAAA", true)
           .catch(err => {
@@ -1032,6 +1026,32 @@ Private KEY content
     });
 
     it("should return the synchronisation including the updated status", async () => {
+      // add certs to awsThing
+      await request(server)
+        .post("/api/aws/things/" + storedAwsThing._id.toString() + "/certs")
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+          )
+        )
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../../aws certs/750-831/d6c62e892c-private.pem.key"
+          )
+        )
+        .attach(
+          "certs",
+          path.join(
+            __dirname,
+            "../../../../aws certs/750-831/AmazonRootCA1.pem"
+          )
+        )
+        .set("x-auth-token", userToken);
+
       const storedSync = await synchronisationController.createSynchronisation(
         synchronisationSchema
       );

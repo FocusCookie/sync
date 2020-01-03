@@ -78,9 +78,24 @@ describe("AWS Routes", () => {
   const executePostThingCerts = id => {
     return request(server)
       .post("/api/aws/things/" + id + "/certs")
-      .attach("certs", __dirname + "/certs/aws/2265c6b5af-certificate.pem.crt")
-      .attach("certs", __dirname + "/certs/aws/2265c6b5af-private.pem.key")
-      .attach("certs", __dirname + "/certs/aws/AmazonRootCA1.pem")
+      .attach(
+        "certs",
+        path.join(
+          __dirname,
+          "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+        )
+      )
+      .attach(
+        "certs",
+        path.join(
+          __dirname,
+          "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+        )
+      )
+      .attach(
+        "certs",
+        path.join(__dirname, "../../../aws certs/750-831/AmazonRootCA1.pem")
+      )
       .set("x-auth-token", userToken);
   };
 
@@ -610,13 +625,25 @@ describe("AWS Routes", () => {
             .post("/api/aws/things/5dd65bccd4387dc776cdAAAA/certs")
             .attach(
               "certs",
-              __dirname + "/certs/aws/2265c6b5af-certificate.pem.crt"
+              path.join(
+                __dirname,
+                "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+              )
             )
             .attach(
               "certs",
-              __dirname + "/certs/aws/2265c6b5af-private.pem.key"
+              path.join(
+                __dirname,
+                "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+              )
             )
-            .attach("certs", __dirname + "/certs/aws/AmazonRootCA1.pem");
+            .attach(
+              "certs",
+              path.join(
+                __dirname,
+                "../../../aws certs/750-831/AmazonRootCA1.pem"
+              )
+            );
 
           expect(result.status).toBe(401);
           expect(result.error.text).toMatch(/access denied/i);
@@ -651,24 +678,48 @@ describe("AWS Routes", () => {
         const thing = await executePostThing();
         result = await request(server)
           .post("/api/aws/things/" + thing.body._id + "/certs")
-          .attach("certs", __dirname + "/certs/aws/2265c6b5af-private.pem.key")
-          .attach("certs", __dirname + "/certs/aws/AmazonRootCA1.pem")
+          .attach(
+            "certs",
+            path.join(
+              __dirname,
+              "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+            )
+          )
+          .attach(
+            "certs",
+            path.join(
+              __dirname,
+              "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+            )
+          )
           .set("x-auth-token", userToken);
 
         expect(result.status).toBe(400);
         expect(result.error.text).toMatch(/Incomplete certification files/i);
       });
 
-      it("should return an 400 a invalid file type is provided", async () => {
+      it("should return an 400 if an invalid file type is provided", async () => {
         const thing = await executePostThing();
         result = await request(server)
           .post("/api/aws/things/" + thing.body._id + "/certs")
-          .attach("certs", __dirname + "/certs/aws/invalid.txt")
           .attach(
             "certs",
-            __dirname + "/certs/aws/2265c6b5af-certificate.pem.crt"
+            path.join(
+              __dirname,
+              "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+            )
           )
-          .attach("certs", __dirname + "/certs/aws/AmazonRootCA1.pem")
+          .attach(
+            "certs",
+            path.join(
+              __dirname,
+              "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+            )
+          )
+          .attach(
+            "certs",
+            path.join(__dirname, "../../../aws certs/invalid.txt")
+          )
           .set("x-auth-token", userToken);
 
         expect(result.status).toBe(400);
@@ -740,7 +791,7 @@ describe("AWS Routes", () => {
         const result = await executeDeleteThingCerts();
 
         expect(result.status).toBe(400);
-        expect(result.error.text).toMatch(/No Thing found with ID:.*/i);
+        expect(result.error.text).toMatch(/No Thing found with ID:*/i);
       });
 
       it("should return an 400 id doesn't exist in the database", async () => {
