@@ -1,56 +1,49 @@
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark>
-      <div class="d-flex align-center">
-        <v-img
-          alt="Vuetify Logo"
-          class="shrink mr-2"
-          contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
-          transition="scale-transition"
-          width="40"
-        />
-
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
-        />
-      </div>
-
-      <v-spacer></v-spacer>
-
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
+    <v-app-bar app flat id="appBar">
+      <Navbar />
     </v-app-bar>
 
+    <!-- Sizes your content based upon application components -->
     <v-content>
-      <HelloWorld />
+      <!-- Provides the application the proper gutter -->
+      <v-container fluid>
+        <!-- If using vue-router -->
+        <div id="content">
+          <router-view></router-view>
+        </div>
+      </v-container>
     </v-content>
+
+    <v-footer app>
+      <!-- -->
+    </v-footer>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld";
+import Navbar from "./components/NavBar";
 
 export default {
   name: "App",
-
   components: {
-    HelloWorld
+    Navbar
   },
-
   data: () => ({
     //
   })
 };
 </script>
+
+<style>
+#app {
+  background: #f0f2f5;
+}
+#appBar {
+  border-bottom: 4px solid #d0d8e0;
+}
+#content {
+  width: 1024px;
+  margin: 0 auto;
+}
+</style>
