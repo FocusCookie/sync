@@ -15,19 +15,21 @@
       </v-container>
     </v-content>
 
-    <v-footer app>
-      <!-- -->
+    <v-footer app fixed id="appFooter" padless>
+      <Footer />
     </v-footer>
   </v-app>
 </template>
 
 <script>
 import Navbar from "./components/NavBar";
+import Footer from "./components/Footer";
 
 export default {
   name: "App",
   components: {
-    Navbar
+    Navbar,
+    Footer
   },
   data: () => ({
     //
@@ -45,5 +47,8 @@ export default {
 #content {
   width: 1024px;
   margin: 0 auto;
+}
+#appFooter {
+  background: #cfd6de;
 }
 </style>
