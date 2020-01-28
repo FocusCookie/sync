@@ -5,17 +5,21 @@
       :headline="noSyncsMessage.headline"
       :message="noSyncsMessage.message"
       :button="noSyncsMessage.button"
-      @createSyncEvent="con"
+      @createSyncEvent="createSync"
+      v-if="!viewCreateSync"
     />
+    <CreateSync v-if="viewCreateSync" />
   </div>
 </template>
 
 <script>
 import Message from "../components/Message";
+import CreateSync from "../components/CreateSync";
 
 export default {
   name: "syncs",
   data: () => ({
+    viewCreateSync: false,
     noSyncsMessage: {
       headline: "No Sync found.",
       message: "Please create your first sync.",
@@ -30,10 +34,12 @@ export default {
     }
   }),
   components: {
-    Message
+    Message,
+    CreateSync
   },
   methods: {
-    con(payload) {
+    createSync(payload) {
+      this.viewCreateSync = !this.viewCreateSync;
       console.log(payload);
     }
   }
