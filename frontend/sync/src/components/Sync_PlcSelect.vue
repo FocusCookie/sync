@@ -5,7 +5,13 @@
       <v-row>
         <v-col cols="9" class="pa-3">
           <v-form class="pa-0 ma-0">
-            <v-text-field height="43" dense label="Outlined" outlined hide-details>awd</v-text-field>
+            <v-text-field
+              height="43"
+              dense
+              placeholder="Search for a specific PLC"
+              outlined
+              hide-details
+            >awd</v-text-field>
           </v-form>
         </v-col>
         <v-col cols="3" class="pa-3">
