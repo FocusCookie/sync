@@ -5,7 +5,12 @@ const fs = require("fs");
 const config = require("config");
 const debugStartup = require("debug")("app:startup"); // export DEBUG=app:*
 
+var cors = require("cors"); // to make request when the frontend is loaded by a different url localhost:3000 frontend backend :8080
+// TODO: kill cors when frontend is provided by the same url
+
 const app = express();
+
+app.use(cors());
 
 app.get("/", (req, res) => {
   res.send("hello world with HTTPS! <3");
