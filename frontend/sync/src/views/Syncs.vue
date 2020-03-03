@@ -8,7 +8,7 @@
       @createSyncEvent="createSync"
       v-if="!viewCreateSync"
     />
-    <CreateSync v-if="viewCreateSync" />
+    <CreateSync v-if="viewCreateSync" @syncCreationCanceld="createSync" />
   </div>
 </template>
 
@@ -38,9 +38,8 @@ export default {
     CreateSync
   },
   methods: {
-    createSync(payload) {
+    createSync() {
       this.viewCreateSync = !this.viewCreateSync;
-      console.log(payload);
     }
   }
 };

@@ -13,7 +13,6 @@
           <v-container v-if="!userToken" id="loginWrapper">
             <v-row>
               <v-col></v-col>
-              <v-spacer></v-spacer>
               <v-col>
                 <v-card width="398" id="roundedLoginCard" class="pa-6" raised>
                   <v-img
@@ -75,7 +74,7 @@
                   {{ loginError }}
                 </v-alert>
               </v-col>
-              <v-spacer></v-spacer>
+              <v-col></v-col>
             </v-row>
           </v-container>
           <router-view v-if="userToken"></router-view>
