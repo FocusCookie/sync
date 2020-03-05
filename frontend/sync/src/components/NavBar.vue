@@ -22,7 +22,7 @@
       <v-btn href="#" color="blue-grey darken-1" text x-large>
         <v-icon>mdi-settings</v-icon>
       </v-btn>
-      <v-btn @click="logout" href="#" color="blue-grey darken-1" text x-large>
+      <v-btn @click="logout" href="/" color="blue-grey darken-1" text x-large>
         <span class="ml-1 font-weight-bold">LOGOUT</span>
       </v-btn>
     </div>
@@ -30,13 +30,14 @@
 </template>
 
 <script>
+import { UserService } from "../services/user.service";
+
 export default {
   name: "NavBar",
   data: () => ({}),
   methods: {
-    logout: function() {
-      console.log("logout executed");
-      this.$emit("logout");
+    logout() {
+      UserService.logout();
     }
   }
 };

@@ -11,7 +11,7 @@
               placeholder="Search for a specific PLC"
               outlined
               hide-details
-            >awd</v-text-field>
+            ></v-text-field>
           </v-form>
         </v-col>
         <v-col cols="3" class="pa-3">

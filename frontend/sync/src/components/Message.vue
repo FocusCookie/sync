@@ -15,7 +15,8 @@
           class="float-right"
           dark
           large
-        >{{ button.text }}</v-btn>
+          >{{ button.text }}</v-btn
+        >
       </div>
     </div>
   </div>
