@@ -1,7 +1,7 @@
 <template>
   <div id="footer">
     <div class="d-flex align-center float-left">
-      <v-btn href="/about" color="blue-grey darken-1" text x-large>
+      <v-btn href="#" color="blue-grey darken-1" text x-large>
         <v-icon>mdi-copyright</v-icon>
         <span class="ml-2 font-weight-bold">Copyright 2020</span>
       </v-btn>

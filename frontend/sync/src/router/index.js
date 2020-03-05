@@ -2,6 +2,7 @@ import Vue from "vue";
 import Router from "vue-router";
 import Home from "@/views/Home.vue";
 import Syncs from "@/views/Syncs.vue";
+import Plcs from "@/views/Plcs.vue";
 import Login from "@/views/Login.vue";
 import { TokenService } from "../services/storage.service";
 
@@ -37,7 +38,7 @@ const router = new Router({
     {
       path: "/plcs",
       name: "plcs",
-      component: Home
+      component: Plcs
     }
   ]
 });

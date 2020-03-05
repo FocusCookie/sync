@@ -3,7 +3,7 @@
     <v-container class="px-3 py-0">
       <!-- Stack the columns on mobile by making one full-width and the other half-width -->
       <v-row>
-        <v-col cols="9" class="pa-3">
+        <v-col cols="8" class="pa-3">
           <v-form class="pa-0 ma-0">
             <v-text-field
               height="43"
@@ -14,10 +14,13 @@
             ></v-text-field>
           </v-form>
         </v-col>
-        <v-col cols="3" class="pa-3">
-          <v-btn outlined large class="float-right">
+        <v-col cols="4" class="pa-3">
+          <v-btn outlined large>
             Search
             <v-icon right>mdi-magnify</v-icon>
+          </v-btn>
+          <v-btn outlined large class="float-right">
+            <v-icon>mdi-refresh</v-icon>
           </v-btn>
         </v-col>
       </v-row>
@@ -30,7 +33,7 @@
 
 <script>
 export default {
-  name: "Sync_PlcSelect.vue",
+  name: "Sync_PlcSelect",
   data: () => ({}),
   methods: {}
 };

@@ -9,7 +9,7 @@
       <!-- Provides the application the proper gutter -->
       <v-container fluid>
         <!-- If using vue-router -->
-        <div id="content">
+        <div id="content" class="mt-5 mb-5">
           <router-view></router-view>
         </div>
       </v-container>

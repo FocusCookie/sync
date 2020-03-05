@@ -19,9 +19,9 @@
     <v-spacer></v-spacer>
 
     <div class="d-flex align-center float-right">
-      <v-btn href="#" color="blue-grey darken-1" text x-large>
+      <!-- <v-btn href="#" color="blue-grey darken-1" text x-large>
         <v-icon>mdi-settings</v-icon>
-      </v-btn>
+      </v-btn> -->
       <v-btn @click="logout" href="/" color="blue-grey darken-1" text x-large>
         <span class="ml-1 font-weight-bold">LOGOUT</span>
       </v-btn>

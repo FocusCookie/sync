@@ -23,7 +23,7 @@
                 v-model="email"
                 :rules="emailRules"
                 label="email"
-                placeholder="email"
+                placeholder="Enter your email"
                 required
                 outlined
                 rounded
@@ -36,6 +36,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 name="input-10-1"
                 label="password"
+                placeholder="Enter your password"
                 hint="At least 8 characters"
                 required
                 outlined
@@ -105,6 +106,8 @@ export default {
             console.log("Login Failed: ", err.message);
             this.loginError = err.message;
           });
+      } else {
+        this.loginError = "Please enter your credentials.";
       }
     }
   }
