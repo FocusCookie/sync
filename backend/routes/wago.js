@@ -29,7 +29,8 @@ router.post("/details", auth, (req, res) => {
       res.send(result);
     })
     .catch(err => {
-      res.status(400).send(err.message);
+      debug(err);
+      res.status(400).send("Cant login, please check credentials.");
     });
 });
 

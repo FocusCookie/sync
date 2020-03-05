@@ -103,41 +103,54 @@ function getPlcs() {
 function readPlcXmls(plc) {
   return new Promise((resolve, reject) => {
     var ftpClient = new FTP();
+
     ftpClient.connect({
       host: plc.ip,
       port: 21,
       user: plc.user,
       password: plc.password
     });
-    ftpClient.on("ready", function() {
-      ftpClient.list("PLC/", function(err, list) {
-        if (err) {
-          reject(err);
-        } else {
-          ftpClient.end();
-          plc["files"] = list.filter(file => {
-            const xmlRegex = /(.xml)/g;
-            if (
-              xmlRegex.test(file.name) &&
-              file.name !== "error_ini.xml" &&
-              file.name !== "alm_ini.xml" &&
-              file.name !== "visu_ini.xml"
-            ) {
-              return file.name;
-            }
-          });
 
-          // remove useless information about the file
-          let result = [];
-          plc.files.forEach(item => {
-            result.push({ name: item.name, size: item.size });
-          });
+    ftpClient.on("error", function(err) {
+      debug("readPlcXmls ", err);
+      reject(err.message);
+    });
 
-          plc.files = result;
+    ftpClient.on("ready", function(err) {
+      debug("ON");
+      if (err) {
+        debug(err);
+        reject("done");
+      } else {
+        ftpClient.list("PLC/", function(err, list) {
+          if (err) {
+            reject(err);
+          } else {
+            ftpClient.end();
+            plc["files"] = list.filter(file => {
+              const xmlRegex = /(.xml)/g;
+              if (
+                xmlRegex.test(file.name) &&
+                file.name !== "error_ini.xml" &&
+                file.name !== "alm_ini.xml" &&
+                file.name !== "visu_ini.xml"
+              ) {
+                return file.name;
+              }
+            });
 
-          resolve(plc);
-        }
-      });
+            // remove useless information about the file
+            let result = [];
+            plc.files.forEach(item => {
+              result.push({ name: item.name, size: item.size });
+            });
+
+            plc.files = result;
+
+            resolve(plc);
+          }
+        });
+      }
     });
   });
 }
@@ -145,7 +158,6 @@ function readPlcXmls(plc) {
 // returns the plcs with available XML files
 function readAllPlcsXmls(plcs) {
   return new Promise((resolve, reject) => {
-    // find all the Wago PLCs in the network
     const actions = plcs.map(readPlcXmls);
     let allPlcsXmlFiles = Promise.all(actions);
     allPlcsXmlFiles.then(details => resolve(details)).catch(err => reject(err));
@@ -201,6 +213,12 @@ function getPlcXmlFileData(plc, xmlFile) {
         user: plc.user,
         password: plc.password
       });
+
+      ftpClient.on("error", function(err) {
+        debug("getPlcXmlFileData ", err);
+        reject(err.message);
+      });
+
       ftpClient.on("ready", function() {
         ftpClient.get("PLC/" + xmlFile, function(err, stream) {
           if (err) {
@@ -277,38 +295,22 @@ function getPlcDetails(plc) {
         if (plc.user === "" || plc.password === "") {
           reject(new Error("Invalid PLC"));
         } else {
-          getPlcInformation(plc)
-            .then(result => {
-              plc = result;
+          readPlcXmls(plc)
+            .then(plcXml => {
+              getAllPlcXmlData(plcXml)
+                .then(result => {
+                  delete result.user;
+                  delete result.password;
 
-              readPlcXmls(plc)
-                .then(plcXml => {
-                  getAllPlcXmlData(plcXml)
-                    .then(result => {
-                      delete result.user;
-                      delete result.password;
-
-                      resolve(result);
-                    })
-                    .catch(err =>
-                      reject(
-                        new Error(
-                          "Something broke while receiving XML data.",
-                          err
-                        )
-                      )
-                    );
+                  resolve(result);
                 })
                 .catch(err =>
                   reject(
-                    "Something broke while reading XML files from PLC.",
-                    err
+                    new Error("Something broke while receiving XML data.", err)
                   )
                 );
             })
-            .catch(err =>
-              reject("Something broke while receiving PLC Information.", err)
-            );
+            .catch(err => reject(err));
         }
       } else {
         reject(new Error("Invalid PLC"));
