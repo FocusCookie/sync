@@ -38,7 +38,7 @@
       <v-divider></v-divider>
     </v-row>
     <v-row no-gutters>
-      <v-expansion-panels accordion flat focusable>
+      <v-expansion-panels v-if="!loading" accordion flat focusable>
         <v-expansion-panel
           v-for="(item, i) in plcsInNetwork"
           :key="i"
@@ -46,10 +46,10 @@
         >
           <v-expansion-panel-header>
             <v-row no-gutters>
-              <v-col cols="3">{{ item.name }}</v-col>
-              <v-col cols="3">{{ item.articleNumber }}</v-col>
               <v-col cols="3">{{ item.ip }}</v-col>
+              <v-col cols="3">{{ item.articleNumber }}</v-col>
               <v-col cols="3">{{ item.mac }}</v-col>
+              <v-col cols="3">{{ item.name }}</v-col>
             </v-row>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
@@ -108,7 +108,7 @@
 </template>
 
 <script>
-// import { ApiService } from "../services/api.service";
+import { ApiService } from "../services/api.service";
 
 export default {
   name: "SelectPlcFromNetwork",
@@ -117,29 +117,6 @@ export default {
     plcsInNetwork: null,
     user: "",
     password: "",
-    plcsMock: [
-      {
-        name: "first Controller",
-        ip: "192.168.1.1",
-        mac: "00:30:de:0a:77:1b",
-        articleNumber: "750-831",
-        modules: [-30719]
-      },
-      {
-        name: "second Controller",
-        ip: "192.168.1.2",
-        mac: "00:30:de:0a:77:2b",
-        articleNumber: "750-880",
-        modules: [-30719, -31743]
-      },
-      {
-        name: "third Controller",
-        ip: "192.168.1.3",
-        mac: "00:30:de:0a:77:3b",
-        articleNumber: "750-8202",
-        modules: [-30719, -31743, -31743]
-      }
-    ],
     showPassword: false,
     rules: {
       required: value => !!value || "Required.",
@@ -152,26 +129,34 @@ export default {
   },
   methods: {
     refreshPlcs() {
-      // TODO: Add api call wago search
-      this.loading = !this.loading;
-      setTimeout(() => {
+      this.loading = true;
+      this.plc = null;
+      this.$emit("plcSelected", null);
+      ApiService.get("wago/search").then(res => {
         this.loading = false;
-        this.plcsInNetwork = this.plcsMock;
-      }, 2000);
+        this.plcsInNetwork = res.data;
+      });
     },
     selectPlc(plc) {
       this.plc = plc;
+      this.plc.user = this.user;
+      this.plc.password = this.password;
+
       this.$emit("plcSelected", this.plc);
     }
   },
   watch: {
     user() {
-      this.plc.user = this.user;
-      this.$emit("plcSelected", this.plc);
+      if (this.plc) {
+        this.plc.user = this.user;
+        this.$emit("plcSelected", this.plc);
+      }
     },
     password() {
-      this.plc.password = this.password;
-      this.$emit("plcSelected", this.plc);
+      if (this.plc) {
+        this.plc.password = this.password;
+        this.$emit("plcSelected", this.plc);
+      }
     }
   }
 };

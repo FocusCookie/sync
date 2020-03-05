@@ -35,6 +35,14 @@
         <v-stepper-items>
           <v-stepper-content step="1" class="stepper-step-content mt-5">
             <SelectPlcFromNetwork @plcSelected="selectedPlcForDetails" />
+            <v-progress-linear
+              :active="loadingPlcDetails"
+              :indeterminate="loadingPlcDetails"
+              height="10"
+              bottom
+              rounded
+              color="primary"
+            ></v-progress-linear>
           </v-stepper-content>
 
           <v-stepper-content step="2" class="stepper-step-content mt-5 pa-5">
@@ -52,6 +60,10 @@
       </v-stepper>
     </div>
 
+    <v-alert v-if="error" type="error" class="mt-5">
+      {{ error }}
+    </v-alert>
+
     <div class="actionBar mt-5">
       <v-btn @click="cancelCreation" color="default" text large>Cancel</v-btn>
       <v-btn
@@ -68,6 +80,7 @@
         @click="nextStep"
         large
         v-if="currentStep < maxSteps"
+        :disabled="disableContinue"
         >Continue</v-btn
       >
       <v-btn color="success" class="ml-5" large v-if="currentStep === maxSteps"
@@ -79,12 +92,22 @@
 
 <script>
 import SelectPlcFromNetwork from "../components/SelectPlcFromNetwork";
+import { ApiService } from "../services/api.service";
+
+function nextStep(instance) {
+  if (instance.currentStep <= instance.maxSteps) instance.currentStep++;
+}
 
 export default {
   name: "CreateSync",
   data: () => ({
     currentStep: 1,
-    maxSteps: 4
+    maxSteps: 4,
+    selectedPlc: null,
+    selectedPlcDetails: null,
+    loadingPlcDetails: false,
+    disableContinue: false,
+    error: null
   }),
   components: {
     SelectPlcFromNetwork
@@ -94,15 +117,43 @@ export default {
       if (this.currentStep >= 0) this.currentStep--;
     },
     nextStep() {
-      if (this.currentStep <= this.maxSteps) this.currentStep++;
+      switch (this.currentStep) {
+        case 1:
+          if (this.selectedPlc) {
+            if (
+              this.selectedPlc.user.length >= 3 &&
+              this.selectedPlc.password.length >= 3
+            ) {
+              this.loadingPlcDetails = true;
+              this.disableContinue = true;
+
+              ApiService.post("wago/details", this.selectedPlc)
+                .then(res => {
+                  this.selectedPlcForDetails = res.data;
+                  this.loadingPlcDetails = false;
+                  this.disableContinue = false;
+                  this.error = null;
+                  nextStep(this);
+                })
+                .catch(err => {
+                  this.error = err.response.data;
+                  this.loadingPlcDetails = false;
+                  this.disableContinue = false;
+                });
+            }
+          }
+          break;
+        default:
+          nextStep(this);
+          break;
+      }
     },
     cancelCreation() {
       console.log("Sync Creation Canceled");
       this.$emit("syncCreationCanceld");
     },
     selectedPlcForDetails(value) {
-      console.log("in creation stepper component");
-      console.log(value);
+      this.selectedPlc = value;
     }
   }
 };
@@ -160,7 +211,7 @@ export default {
   border: 1px solid #b8c4cd;
   box-sizing: border-box;
   border-radius: 5px;
-  min-height: 100px;
+
   padding: 0;
 }
 </style>
