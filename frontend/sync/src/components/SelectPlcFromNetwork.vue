@@ -38,71 +38,23 @@
       <v-divider></v-divider>
     </v-row>
     <v-row no-gutters>
-      <v-expansion-panels v-if="!loading" accordion flat focusable>
-        <v-expansion-panel
-          v-for="(item, i) in plcsInNetwork"
-          :key="i"
-          @click="selectPlc(item)"
-        >
-          <v-expansion-panel-header>
-            <v-row no-gutters>
-              <v-col cols="3">{{ item.ip }}</v-col>
-              <v-col cols="3">{{ item.articleNumber }}</v-col>
-              <v-col cols="3">{{ item.mac }}</v-col>
-              <v-col cols="3">{{ item.name }}</v-col>
-            </v-row>
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <v-list>
-              <v-list-item v-for="(element, x) in item.modules" :key="x">
-                <v-list-item-icon>
-                  <v-chip color="yellow" label>
-                    Digital Input
-                  </v-chip>
-                </v-list-item-icon>
-
-                <v-list-item-content id="">
-                  <v-list-item-title v-text="element"></v-list-item-title>
-                </v-list-item-content>
-              </v-list-item>
-            </v-list>
-          </v-expansion-panel-content>
-          <v-divider></v-divider>
-        </v-expansion-panel>
-      </v-expansion-panels>
+      <v-list v-if="!loading" class="list">
+        <v-list-item-group color="primary">
+          <v-list-item v-for="(item, i) in plcsInNetwork" :key="i">
+            <v-list-item-content @click="selectPlc(item)">
+              <v-row no-gutters>
+                <v-col cols="3">{{ item.ip }}</v-col>
+                <v-col cols="3">{{ item.articleNumber }}</v-col>
+                <v-col cols="3">{{ item.mac }}</v-col>
+                <v-col cols="3">{{ item.name }}</v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
     </v-row>
-    <v-row class="pt-5 pl-5 pr-5">
-      <v-col cols="6">
-        <v-form class="ma-0">
-          <v-text-field
-            v-model="user"
-            :rules="[rules.required, rules.min]"
-            name="user"
-            label="PLC User"
-            placeholder="Enter a PLC User"
-            hint="At least 3 characters"
-            required
-            outlined
-          ></v-text-field>
-        </v-form>
-      </v-col>
-      <v-col cols="6">
-        <v-form class="ma-0">
-          <v-text-field
-            v-model="password"
-            :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-            :rules="[rules.required, rules.min]"
-            :type="showPassword ? 'text' : 'password'"
-            name="password"
-            label="PLC Password"
-            placeholder="Enter the PLC Password"
-            hint="At least 3 characters"
-            required
-            outlined
-            @click:append="showPassword = !showPassword"
-          ></v-text-field>
-        </v-form>
-      </v-col>
+    <v-row no-gutters>
+      <v-divider></v-divider>
     </v-row>
   </v-container>
 </template>
@@ -115,13 +67,6 @@ export default {
   data: () => ({
     loading: false,
     plcsInNetwork: null,
-    user: "",
-    password: "",
-    showPassword: false,
-    rules: {
-      required: value => !!value || "Required.",
-      min: v => v.length >= 3 || "Min 3 characters"
-    },
     plc: null
   }),
   created() {
@@ -139,24 +84,7 @@ export default {
     },
     selectPlc(plc) {
       this.plc = plc;
-      this.plc.user = this.user;
-      this.plc.password = this.password;
-
       this.$emit("plcSelected", this.plc);
-    }
-  },
-  watch: {
-    user() {
-      if (this.plc) {
-        this.plc.user = this.user;
-        this.$emit("plcSelected", this.plc);
-      }
-    },
-    password() {
-      if (this.plc) {
-        this.plc.password = this.password;
-        this.$emit("plcSelected", this.plc);
-      }
     }
   }
 };
@@ -183,5 +111,8 @@ export default {
 }
 .v-expansion-panel-content__wrap {
   padding: 0 0 0 0;
+}
+.list {
+  width: 100%;
 }
 </style>

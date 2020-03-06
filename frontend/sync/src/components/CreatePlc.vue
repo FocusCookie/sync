@@ -35,6 +35,41 @@
         <v-stepper-items>
           <v-stepper-content step="1" class="stepper-step-content mt-5">
             <SelectPlcFromNetwork @plcSelected="selectedPlcForDetails" />
+            <v-container>
+              <v-row class="pt-5 pl-5 pr-5">
+                <v-col cols="6">
+                  <v-form class="ma-0">
+                    <v-text-field
+                      v-model="user"
+                      :rules="[rules.required, rules.min]"
+                      name="user"
+                      label="PLC User"
+                      placeholder="Enter a PLC User"
+                      hint="At least 3 characters"
+                      required
+                      outlined
+                    ></v-text-field>
+                  </v-form>
+                </v-col>
+                <v-col cols="6">
+                  <v-form class="ma-0">
+                    <v-text-field
+                      v-model="password"
+                      :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                      :rules="[rules.required, rules.min]"
+                      :type="showPassword ? 'text' : 'password'"
+                      name="password"
+                      label="PLC Password"
+                      placeholder="Enter the PLC Password"
+                      hint="At least 3 characters"
+                      required
+                      outlined
+                      @click:append="showPassword = !showPassword"
+                    ></v-text-field>
+                  </v-form>
+                </v-col>
+              </v-row>
+            </v-container>
             <v-progress-linear
               :active="loadingPlcDetails"
               :indeterminate="loadingPlcDetails"
@@ -46,7 +81,7 @@
           </v-stepper-content>
 
           <v-stepper-content step="2" class="stepper-step-content mt-5 pa-5">
-            step2!
+            {{ selectedPlc }}
           </v-stepper-content>
 
           <v-stepper-content step="3" class="stepper-step-content mt-5 pa-5">
@@ -104,10 +139,16 @@ export default {
     currentStep: 1,
     maxSteps: 4,
     selectedPlc: null,
-    selectedPlcDetails: null,
     loadingPlcDetails: false,
     disableContinue: false,
-    error: null
+    error: null,
+    user: "",
+    password: "",
+    showPassword: false,
+    rules: {
+      required: value => !!value || "Required.",
+      min: v => v.length >= 3 || "Min 3 characters"
+    }
   }),
   components: {
     SelectPlcFromNetwork
@@ -120,19 +161,18 @@ export default {
       switch (this.currentStep) {
         case 1:
           if (this.selectedPlc) {
-            if (
-              this.selectedPlc.user.length >= 3 &&
-              this.selectedPlc.password.length >= 3
-            ) {
+            if (this.user.length >= 3 && this.password.length >= 3) {
+              this.selectedPlc.user = this.user;
+              this.selectedPlc.password = this.password;
               this.loadingPlcDetails = true;
               this.disableContinue = true;
 
               ApiService.post("wago/details", this.selectedPlc)
                 .then(res => {
-                  this.selectedPlcForDetails = res.data;
                   this.loadingPlcDetails = false;
                   this.disableContinue = false;
                   this.error = null;
+                  this.selectedPlc = res.data;
                   nextStep(this);
                 })
                 .catch(err => {
@@ -153,6 +193,9 @@ export default {
       this.$emit("syncCreationCanceld");
     },
     selectedPlcForDetails(value) {
+      console.log("SELECTED ", value);
+      value.user = this.user;
+      value.password = this.password;
       this.selectedPlc = value;
     }
   }
