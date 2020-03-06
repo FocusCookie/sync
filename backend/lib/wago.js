@@ -44,13 +44,16 @@ function getPlcInformation(plc) {
       .then(function() {
         // Read plc Modules and plc Article Number
         modbusTcpClient
-          .readHoldingRegisters(8240, 65)
+          .readHoldingRegisters(8210, 1)
           .then(response => {
             plcInformations["articleNumber"] = "750-" + response.result[0];
-            plcInformations["modules"] = response.result.slice(
+
+            // TODO: add reading modules function back again for non PFCs
+            // only if .readHoldingRegisters(8240, 65)
+            /* plcInformations["modules"] = response.result.slice(
               1,
               response.result.indexOf(0)
-            );
+            ); */
           })
           .then(() => {
             modbusTcpClient
