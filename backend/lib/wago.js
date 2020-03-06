@@ -125,7 +125,17 @@ function readPlcXmls(plc) {
         debug(err);
         reject("done");
       } else {
-        ftpClient.list("PLC/", function(err, list) {
+        let path = "PLC/";
+        let temp = plc.articleNumber.split("-");
+        temp = Number(temp[1]);
+
+        if (temp > 8000) {
+          path = "/home/codesys_root/";
+        }
+
+        debug(`${plc.articleNumber} is using path ${path}`);
+
+        ftpClient.list(path, function(err, list) {
           if (err) {
             reject(err);
           } else {
@@ -149,7 +159,7 @@ function readPlcXmls(plc) {
             });
 
             plc.files = result;
-
+            debug(plc);
             resolve(plc);
           }
         });
@@ -223,7 +233,15 @@ function getPlcXmlFileData(plc, xmlFile) {
       });
 
       ftpClient.on("ready", function() {
-        ftpClient.get("PLC/" + xmlFile, function(err, stream) {
+        let path = "PLC/";
+        let temp = plc.articleNumber.split("-");
+        temp = Number(temp[1]);
+
+        if (temp > 8000) {
+          path = "/home/codesys_root/";
+        }
+
+        ftpClient.get(path + xmlFile, function(err, stream) {
           if (err) {
             reject(
               new Error("Something broke while receiving XML Data via ftp.")
