@@ -4,6 +4,8 @@
       <v-col cols="10">
         <v-form class="ma-0">
           <v-text-field
+            :disabled="loading"
+            v-model="searchTerm"
             height="43"
             dense
             placeholder="Filter for a specific PLC property"
@@ -40,7 +42,7 @@
     <v-row no-gutters>
       <v-list v-if="!loading" class="list">
         <v-list-item-group color="primary">
-          <v-list-item v-for="(item, i) in plcsInNetwork" :key="i">
+          <v-list-item v-for="(item, i) in filtered" :key="i">
             <v-list-item-content @click="selectPlc(item)">
               <v-row no-gutters>
                 <v-col cols="3">{{ item.ip }}</v-col>
@@ -67,8 +69,26 @@ export default {
   data: () => ({
     loading: false,
     plcsInNetwork: null,
-    plc: null
+    plc: null,
+    filtered: [],
+    searchTerm: ""
   }),
+  watch: {
+    searchTerm(term) {
+      this.filtered = this.plcsInNetwork.filter(plc => {
+        if (
+          plc.ip.includes(term) ||
+          plc.mac.includes(term) ||
+          plc.articleNumber.includes(term) ||
+          plc.name.includes(term)
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+    }
+  },
   created() {
     this.refreshPlcs();
   },
@@ -80,6 +100,7 @@ export default {
       ApiService.get("wago/search").then(res => {
         this.loading = false;
         this.plcsInNetwork = res.data;
+        this.filtered = res.data;
       });
     },
     selectPlc(plc) {

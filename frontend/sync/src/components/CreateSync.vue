@@ -100,7 +100,6 @@ export default {
       if (this.currentStep <= this.maxSteps) this.currentStep++;
     },
     cancelCreation() {
-      console.log("Sync Creation Canceled");
       this.$emit("syncCreationCanceld");
     }
   }

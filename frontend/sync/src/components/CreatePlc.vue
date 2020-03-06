@@ -4,8 +4,20 @@
 
     <v-divider class="my-5"></v-divider>
     <div class="instructions">
-      <span class="subtitle-1 blue-grey--text darken-1--text"
+      <span
+        v-if="currentStep === 1"
+        class="subtitle-1 blue-grey--text darken-1--text"
         >Please select the PLC that you want to add.</span
+      >
+      <span
+        v-if="currentStep === 2"
+        class="subtitle-1 blue-grey--text darken-1--text"
+        >Please select the variables that you want to sync later.</span
+      >
+      <span
+        v-if="currentStep === 3"
+        class="subtitle-1 blue-grey--text darken-1--text"
+        >Please give the PLC a name.</span
       >
     </div>
     <br />
@@ -27,10 +39,6 @@
           <v-stepper-step :complete="currentStep > 3" step="3"
             >Define a name</v-stepper-step
           >
-
-          <v-divider></v-divider>
-
-          <v-stepper-step step="4">Completion</v-stepper-step>
         </v-stepper-header>
         <v-stepper-items>
           <v-stepper-content step="1" class="stepper-step-content mt-5">
@@ -81,15 +89,55 @@
           </v-stepper-content>
 
           <v-stepper-content step="2" class="stepper-step-content mt-5 pa-5">
-            {{ selectedPlc }}
+            <v-data-table
+              v-model="selected"
+              :headers="headers"
+              :items="visuVars"
+              item-key="varName"
+              show-select
+              class="elevation-0"
+              :search="search"
+            >
+              <template v-slot:top>
+                <v-text-field
+                  v-model="search"
+                  append-icon="mdi-magnify"
+                  label="Search"
+                  single-line
+                  hide-details
+                ></v-text-field>
+              </template>
+            </v-data-table>
           </v-stepper-content>
 
-          <v-stepper-content step="3" class="stepper-step-content mt-5 pa-5">
-            step3!
-          </v-stepper-content>
-
-          <v-stepper-content step="4" class="stepper-step-content mt-5 pa-5">
-            step!4
+          <v-stepper-content step="3" class="stepper-step-content mt-5">
+            <v-progress-linear
+              v-if="finalLoader"
+              :active="finalLoader"
+              :indeterminate="finalLoader"
+              height="10"
+              bottom
+              rounded
+              color="success"
+            ></v-progress-linear>
+            <v-container v-if="!finalLoader" class="pa-5">
+              <v-row>
+                <v-col cols="12">
+                  <v-form class="ma-0">
+                    <v-text-field
+                      v-model="finalName"
+                      :rules="[rules.required, rules.min]"
+                      name="finalName"
+                      label="PLC Name"
+                      placeholder="Enter a PLC name."
+                      hint="At least 3 characters"
+                      required
+                      outlined
+                    ></v-text-field>
+                  </v-form>
+                </v-col>
+              </v-row>
+            </v-container>
           </v-stepper-content>
         </v-stepper-items>
       </v-stepper>
@@ -118,7 +166,12 @@
         :disabled="disableContinue"
         >Continue</v-btn
       >
-      <v-btn color="success" class="ml-5" large v-if="currentStep === maxSteps"
+      <v-btn
+        @click="createPlc"
+        color="success"
+        class="ml-5"
+        large
+        v-if="currentStep === maxSteps"
         >Complete</v-btn
       >
     </div>
@@ -128,27 +181,44 @@
 <script>
 import SelectPlcFromNetwork from "../components/SelectPlcFromNetwork";
 import { ApiService } from "../services/api.service";
+//import router from "../router/index";
 
 function nextStep(instance) {
   if (instance.currentStep <= instance.maxSteps) instance.currentStep++;
 }
 
 export default {
-  name: "CreateSync",
+  name: "CreatePlc",
   data: () => ({
     currentStep: 1,
-    maxSteps: 4,
+    maxSteps: 3,
     selectedPlc: null,
     loadingPlcDetails: false,
     disableContinue: false,
     error: null,
+    finalPlc: null,
+    finalLoader: false,
     user: "",
+    finalName: "",
     password: "",
     showPassword: false,
     rules: {
       required: value => !!value || "Required.",
       min: v => v.length >= 3 || "Min 3 characters"
-    }
+    },
+    selected: [],
+    search: "",
+    headers: [
+      {
+        text: "Variable",
+        algin: "start",
+        value: "varName"
+      },
+      { text: "Programn", value: "prgName" },
+      { text: "Datatype", value: "datatype" },
+      { text: "Visualization", value: "visu" }
+    ],
+    visuVars: []
   }),
   components: {
     SelectPlcFromNetwork
@@ -156,16 +226,20 @@ export default {
   methods: {
     stepBack() {
       if (this.currentStep >= 0) this.currentStep--;
+      this.error = null;
     },
     nextStep() {
       switch (this.currentStep) {
         case 1:
+          // only go to the next step if the plc is reachable an the credentials are working
           if (this.selectedPlc) {
             if (this.user.length >= 3 && this.password.length >= 3) {
               this.selectedPlc.user = this.user;
               this.selectedPlc.password = this.password;
               this.loadingPlcDetails = true;
               this.disableContinue = true;
+              this.visuVars = [];
+              this.error = null;
 
               ApiService.post("wago/details", this.selectedPlc)
                 .then(res => {
@@ -173,6 +247,19 @@ export default {
                   this.disableContinue = false;
                   this.error = null;
                   this.selectedPlc = res.data;
+
+                  res.data.files.forEach(file => {
+                    file.variables.forEach(variable => {
+                      if (variable.prgName === "") variable.prgName = "Global";
+                      this.visuVars.push({
+                        varName: variable.varName,
+                        prgName: variable.prgName,
+                        datatype: variable.datatype,
+                        arti: variable.arti,
+                        visu: file.name
+                      });
+                    });
+                  });
                   nextStep(this);
                 })
                 .catch(err => {
@@ -180,23 +267,78 @@ export default {
                   this.loadingPlcDetails = false;
                   this.disableContinue = false;
                 });
+            } else {
+              this.error = "Please enter the PLC credentials.";
             }
+          } else {
+            this.error = "Please select a PLC.";
           }
           break;
+        case 2:
+          // use only the selected items for the final steps
+          if (this.selected.length > 0) {
+            // save the file names
+            const files = this.selectedPlc.files.map(file => file.name);
+            this.finalPlc = Object.assign({}, this.selectedPlc);
+            this.finalPlc.files = [];
+
+            // check for each file if there is a var selected and push this into the selected PLC files array
+            files.forEach(file => {
+              let result = {
+                name: file,
+                variables: []
+              };
+              this.selected
+                .filter(variable => variable.visu === file)
+                .forEach(elem => {
+                  result.variables.push({
+                    varName: elem.varName,
+                    prgName: elem.prgName,
+                    datatype: elem.datatype,
+                    arti: elem.arti
+                  });
+                });
+              if (result.variables.length > 0) this.finalPlc.files.push(result);
+            });
+            this.error = null;
+            nextStep(this);
+          } else {
+            this.error = "Please select at least one Variable.";
+          }
+
+          break;
+
         default:
           nextStep(this);
           break;
       }
     },
     cancelCreation() {
-      console.log("Sync Creation Canceled");
-      this.$emit("syncCreationCanceld");
+      this.$router.push("/plcs");
     },
     selectedPlcForDetails(value) {
-      console.log("SELECTED ", value);
-      value.user = this.user;
-      value.password = this.password;
+      if (this.user) value.user = this.user;
+      if (this.password) value.password = this.password;
+
       this.selectedPlc = value;
+    },
+    createPlc() {
+      if (this.finalName && this.finalName.length >= 3) {
+        this.error = null;
+        this.finalPlc.name = this.finalName;
+        this.finalLoader = true;
+        ApiService.post("wago", this.finalPlc)
+          .then(() => {
+            this.finalLoader = false;
+            this.$router.push({ path: "/plcs" });
+          })
+          .catch(err => {
+            this.finalLoader = false;
+            this.error = err.response.data;
+          });
+      } else {
+        this.error = "Please enter a PLC name.";
+      }
     }
   }
 };
