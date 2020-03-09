@@ -1083,19 +1083,19 @@ describe("Synchronisation Routes", () => {
           "certs",
           path.join(
             __dirname,
-            "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+            "../../../aws certs/IP 10/2d80f0ea25-certificate.pem.crt"
           )
         )
         .attach(
           "certs",
           path.join(
             __dirname,
-            "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+            "../../../aws certs/IP 10/2d80f0ea25-private.pem.key"
           )
         )
         .attach(
           "certs",
-          path.join(__dirname, "../../../aws certs/750-831/AmazonRootCA1.pem")
+          path.join(__dirname, "../../../aws certs/IP 10/AmazonRootCA1.pem")
         )
         .set("x-auth-token", userToken);
 
@@ -1119,19 +1119,19 @@ describe("Synchronisation Routes", () => {
           "certs",
           path.join(
             __dirname,
-            "../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
+            "../../../aws certs/IP 10/2d80f0ea25-certificate.pem.crt"
           )
         )
         .attach(
           "certs",
           path.join(
             __dirname,
-            "../../../aws certs/750-831/d6c62e892c-private.pem.key"
+            "../../../aws certs/IP 10/2d80f0ea25-private.pem.key"
           )
         )
         .attach(
           "certs",
-          path.join(__dirname, "../../../aws certs/750-831/AmazonRootCA1.pem")
+          path.join(__dirname, "../../../aws certs/IP 10/AmazonRootCA1.pem")
         )
         .set("x-auth-token", userToken);
 
