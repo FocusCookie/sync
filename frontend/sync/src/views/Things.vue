@@ -1,12 +1,12 @@
 <template>
   <div>
     <div class="actionBar mt-5 mb-5">
-      <v-btn outlined @click="enableEditPlcs" class="ml-5" large v-if="plcs">
+      <v-btn outlined @click="enableEditthings" class="ml-5" large v-if="things">
         Edit
         <v-icon right dark>mdi-pencil</v-icon>
       </v-btn>
-      <v-btn color="primary" class="ml-5" to="plcs/create" large v-if="plcs">
-        Add a PLC
+      <v-btn color="primary" class="ml-5" to="things/create" large v-if="things">
+        Create a Thing
         <v-icon right dark>mdi-plus-box</v-icon>
       </v-btn>
     </div>
@@ -15,31 +15,31 @@
       :headline="noSyncsMessage.headline"
       :message="noSyncsMessage.message"
       :button="noSyncsMessage.button"
-      @createPlcEvent="createPlc"
-      v-if="!plcs"
+      @createThingEvent="createThing"
+      v-if="!things"
     />
-    <v-container v-if="plcs">
+    <v-container v-if="things">
       <v-item-group>
         <v-container>
           <v-row>
-            <v-col v-for="(plc, i) in plcs" :key="i" cols="6">
+            <v-col v-for="(thing, i) in things" :key="i" cols="6">
               <v-item>
                 <v-card elevation="0">
                   <v-card-title class="headline">
-                    {{ plc.name }}
+                    {{ thing.name }}
                     <v-spacer></v-spacer>
 
                     <v-chip color="primary" outlined label dark>
                       <v-icon left>mdi-sitemap</v-icon>
-                      {{ plcVarCount(plc.files) }}
+                      {{ thingVarCount(thing.files) }}
                     </v-chip>
                   </v-card-title>
 
-                  <v-card-subtitle v-text="plc.ip"></v-card-subtitle>
+                  <v-card-subtitle v-text="thing.ip"></v-card-subtitle>
 
                   <v-card-actions class="pa-4">
                     <v-spacer></v-spacer>
-                    <v-btn text v-if="editPlcs" @click="deletePlc(plc._id)">
+                    <v-btn text v-if="editthings" @click="deleteThing(thing._id)">
                       <v-icon color="grey">mdi-trash-can-outline</v-icon>
                     </v-btn>
                     <v-btn outlined v-if="false">
@@ -58,57 +58,58 @@
 </template>
 
 <script>
-// TODO: Add error handling for deleting a plc
+// TODO: Add error handling for deleting a thing
 import Message from "../components/Message";
 import { ApiService } from "../services/api.service";
 
 export default {
-  name: "plcs",
+  name: "things",
   data: () => ({
-    plcs: false,
-    editPlcs: false,
+    things: false,
+    editthings: false,
     noSyncsMessage: {
-      headline: "No PLC found.",
-      message: "Please add a PLC.",
+      headline: "No Thing found.",
+      message: "Please create your first Thing.",
       icon: "mdi-emoticon-confused-outline",
       button: {
-        text: "Add a PLC",
+        text: "Create a Thing",
         event: {
-          name: "createPlcEvent",
-          data: "createPlcBtnClicked"
+          name: "createThingEvent",
+          data: "createThingBtnClicked"
         }
       }
     }
   }),
   created() {
-    this.getPlcs();
+    this.getthings();
   },
   components: {
     Message
   },
   methods: {
-    getPlcs() {
-      ApiService.get("wago")
+    getthings() {
+      ApiService.get("things")
         .then(res => {
-          if (res.data.length > 0) this.plcs = res.data;
+          if (res.data.length > 0) this.things = res.data;
         })
         .catch(err => console.log(err));
     },
-    createPlc() {
-      this.$router.push("plcs/create");
+    createThing() {
+      this.$router.push("things/create");
     },
-    enableEditPlcs() {
-      this.editPlcs = !this.editPlcs;
+    enableEditthings() {
+      this.editthings = !this.editthings;
     },
-    deletePlc(id) {
-      ApiService.delete("wago/" + id)
+    deleteThing(id) {
+      ApiService.delete("things/" + id)
         .then(() => {
-          this.getPlcs();
+          this.getthings();
         })
         .catch(err => alert(err.response.data));
     },
-    plcVarCount(files) {
+    thingVarCount(files) {
       let total = 0;
+      console.log(files);
       files.forEach(file => {
         total += file.variables.length;
       });

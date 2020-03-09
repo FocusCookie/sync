@@ -20,8 +20,12 @@ const ApiService = {
     return axios.get(resource);
   },
 
-  post(resource, data) {
-    return axios.post(resource, data);
+  post(resource, data, customHeader) {
+    if (!customHeader) {
+      return axios.post(resource, data);
+    } else {
+      return axios.post(resource, data, customHeader);
+    }
   },
 
   put(resource, data) {

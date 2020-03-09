@@ -3,8 +3,10 @@ import Router from "vue-router";
 import Home from "@/views/Home.vue";
 import Syncs from "@/views/Syncs.vue";
 import Plcs from "@/views/Plcs.vue";
+import Things from "@/views/Things.vue";
 import Login from "@/views/Login.vue";
 import CreatePlc from "@/components/CreatePlc.vue";
+import CreateThing from "@/components/CreateThing.vue";
 import { TokenService } from "../services/storage.service";
 
 Vue.use(Router);
@@ -34,7 +36,12 @@ const router = new Router({
     {
       path: "/things",
       name: "things",
-      component: Home
+      component: Things
+    },
+    {
+      path: "/things/create",
+      name: "CreateThing",
+      component: CreateThing
     },
     {
       path: "/plcs",
