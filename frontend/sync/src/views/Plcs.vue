@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="actionBar mt-5 mb-5">
-      <v-btn outlined class="ml-5" large v-if="plcs"
+      <v-btn outlined @click="enableEditPlcs" class="ml-5" large v-if="plcs"
         >Edit
         <v-icon right dark>mdi-pencil</v-icon>
       </v-btn>
@@ -19,24 +19,46 @@
       v-if="!plcs"
     />
     <v-container v-if="plcs">
-      <v-row dense>
-        <v-col v-for="(plc, i) in plcs" :key="i" cols="12">
-          <v-card color="#26c6da" dark>
-            <div class="d-flex flex-no-wrap justify-space-between">
-              <div>
-                <v-card-title class="headline" v-text="plc.name"></v-card-title>
+      <v-item-group>
+        <v-container>
+          <v-row>
+            <v-col v-for="(plc, i) in plcs" :key="i" cols="6">
+              <v-item>
+                <v-card elevation="0">
+                  <v-card-title class="headline"
+                    >{{ plc.name }}
+                    <v-spacer></v-spacer>
 
-                <v-card-subtitle v-text="plc.ip"></v-card-subtitle>
-              </div>
-            </div>
-          </v-card>
-        </v-col>
-      </v-row>
+                    <v-chip color="primary" outlined label dark>
+                      <v-icon left>mdi-sitemap</v-icon>
+                      {{ plcVarCount(plc.files) }}
+                    </v-chip></v-card-title
+                  >
+
+                  <v-card-subtitle v-text="plc.ip"></v-card-subtitle>
+
+                  <v-card-actions class="pa-4">
+                    <v-spacer></v-spacer>
+                    <v-btn text v-if="editPlcs" @click="deletePlc(plc._id)">
+                      <v-icon color="grey">mdi-trash-can-outline</v-icon>
+                    </v-btn>
+                    <v-btn outlined v-if="false"
+                      >more
+                      <v-icon right dark>mdi-dots-horizontal</v-icon>
+                    </v-btn>
+                  </v-card-actions>
+                </v-card>
+              </v-item>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-item-group>
     </v-container>
   </div>
 </template>
 
 <script>
+// TODO: Add error handling for deleting a plc
 import Message from "../components/Message";
 import { ApiService } from "../services/api.service";
 
@@ -44,6 +66,7 @@ export default {
   name: "plcs",
   data: () => ({
     plcs: false,
+    editPlcs: false,
     noSyncsMessage: {
       headline: "No PLC found.",
       message: "Please add a PLC.",
@@ -58,19 +81,48 @@ export default {
     }
   }),
   created() {
-    ApiService.get("wago")
-      .then(res => {
-        if (res.data.length > 1) this.plcs = res.data;
-      })
-      .catch(err => console.log(err));
+    this.getPlcs();
   },
   components: {
     Message
   },
   methods: {
+    getPlcs() {
+      ApiService.get("wago")
+        .then(res => {
+          if (res.data.length > 0) this.plcs = res.data;
+        })
+        .catch(err => console.log(err));
+    },
     createPlc() {
       this.$router.push("plcs/create");
+    },
+    enableEditPlcs() {
+      this.editPlcs = !this.editPlcs;
+    },
+    deletePlc(id) {
+      ApiService.delete("wago/" + id)
+        .then(() => {
+          this.getPlcs();
+        })
+        .catch(err => alert(err.response.data));
+    },
+    plcVarCount(files) {
+      let total = 0;
+      console.log(files);
+      files.forEach(file => {
+        total += file.variables.length;
+      });
+      return total;
     }
   }
 };
 </script>
+<style>
+.v-card.v-sheet.theme--light {
+  background: #ffffff;
+  border: 1px solid #b8c4cd;
+  box-sizing: border-box;
+  border-radius: 5px;
+}
+</style>
