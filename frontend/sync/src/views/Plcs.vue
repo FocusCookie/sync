@@ -1,9 +1,14 @@
 <template>
   <div>
     <div class="actionBar mt-5 mb-5">
+      <v-btn outlined class="ml-5" large v-if="plcs"
+        >Edit
+        <v-icon right dark>mdi-pencil</v-icon>
+      </v-btn>
       <v-btn color="primary" class="ml-5" to="plcs/create" large v-if="plcs"
-        >Create a new PLC</v-btn
-      >
+        >Add a PLC
+        <v-icon right dark>mdi-plus-box</v-icon>
+      </v-btn>
     </div>
     <Message
       :icon="noSyncsMessage.icon"

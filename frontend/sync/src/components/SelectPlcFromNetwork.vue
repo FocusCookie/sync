@@ -96,12 +96,19 @@ export default {
     refreshPlcs() {
       this.loading = true;
       this.plc = null;
+      this.$emit("error", null);
       this.$emit("plcSelected", null);
-      ApiService.get("wago/search").then(res => {
-        this.loading = false;
-        this.plcsInNetwork = res.data;
-        this.filtered = res.data;
-      });
+      ApiService.get("wago/search")
+        .then(res => {
+          this.loading = false;
+          this.plcsInNetwork = res.data;
+          this.filtered = res.data;
+          this.$emit("error", null);
+        })
+        .catch(err => {
+          this.loading = false;
+          this.$emit("error", err.response.data);
+        });
     },
     selectPlc(plc) {
       this.plc = plc;

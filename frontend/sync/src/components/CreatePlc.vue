@@ -42,7 +42,10 @@
         </v-stepper-header>
         <v-stepper-items>
           <v-stepper-content step="1" class="stepper-step-content mt-5">
-            <SelectPlcFromNetwork @plcSelected="selectedPlcForDetails" />
+            <SelectPlcFromNetwork
+              @plcSelected="selectedPlcForDetails"
+              @error="errorStepOne"
+            />
             <v-container>
               <v-row class="pt-5 pl-5 pr-5">
                 <v-col cols="6">
@@ -288,9 +291,22 @@ export default {
                 name: file,
                 variables: []
               };
+
               this.selected
                 .filter(variable => variable.visu === file)
                 .forEach(elem => {
+                  // Datatypes
+                  switch (file.datatype) {
+                    case 0:
+                      elem.datatype = "Bool";
+                      break;
+                    case 1:
+                      elem.datatype = "Integer";
+                      break;
+                    default:
+                      break;
+                  }
+
                   result.variables.push({
                     varName: elem.varName,
                     prgName: elem.prgName,
@@ -339,6 +355,9 @@ export default {
       } else {
         this.error = "Please enter a PLC name.";
       }
+    },
+    errorStepOne(value) {
+      this.error = value;
     }
   }
 };
