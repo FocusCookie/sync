@@ -12,9 +12,6 @@ pids
 *.pid.lock
 
 #certs
-aws certs
-certs
-test/integration/certs
 *.pem
 *.pem.crt
 *.pem.key
