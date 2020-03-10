@@ -20,6 +20,7 @@ require("./startup/config")();
 require("./startup/routes")(app);
 require("./startup/adminAccount")();
 require("./startup/synchronisations")();
+require("./startup/certs")();
 
 debugStartup("Application Name: " + config.get("name"));
 debugStartup("Environment: " + config.get("environment"));
