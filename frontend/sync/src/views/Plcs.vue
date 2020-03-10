@@ -106,6 +106,7 @@ export default {
     deletePlc(id) {
       ApiService.delete("wago/" + id)
         .then(() => {
+          this.plcs = false;
           this.getPlcs();
         })
         .catch(err => alert(err.response.data));
