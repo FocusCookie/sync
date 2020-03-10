@@ -8,7 +8,7 @@
             v-model="searchTerm"
             height="43"
             dense
-            placeholder="Filter for a specific PLC property"
+            placeholder="Filter for a specific IP, MAC, Articlenumber or name."
             outlined
             hide-details
           ></v-text-field>
@@ -76,11 +76,12 @@ export default {
   watch: {
     searchTerm(term) {
       this.filtered = this.plcsInNetwork.filter(plc => {
+        let regEx = new RegExp(term, "i");
         if (
-          plc.ip.includes(term) ||
-          plc.mac.includes(term) ||
-          plc.articleNumber.includes(term) ||
-          plc.name.includes(term)
+          regEx.test(plc.ip) ||
+          regEx.test(plc.mac) ||
+          regEx.test(plc.articleNumber) ||
+          regEx.test(plc.name)
         ) {
           return true;
         } else {
@@ -134,9 +135,7 @@ export default {
   margin: 0;
   padding: 0;
 }
-.v-expansion-panel-header:before {
-  background: red;
-}
+
 .v-expansion-panel-content__wrap {
   padding: 0 0 0 0;
 }

@@ -158,7 +158,6 @@ export default {
             });
 
             this.things = res.data;
-            console.log(this.things);
           }
         })
         .catch(err => console.log(err));

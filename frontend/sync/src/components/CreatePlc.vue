@@ -82,8 +82,8 @@
               </v-row>
             </v-container>
             <v-progress-linear
-              :active="loadingPlcDetails"
-              :indeterminate="loadingPlcDetails"
+              :active="loading"
+              :indeterminate="loading"
               height="10"
               bottom
               rounded
@@ -196,7 +196,7 @@ export default {
     currentStep: 1,
     maxSteps: 3,
     selectedPlc: null,
-    loadingPlcDetails: false,
+    loading: false,
     disableContinue: false,
     error: null,
     finalPlc: null,
@@ -239,14 +239,14 @@ export default {
             if (this.user.length >= 3 && this.password.length >= 3) {
               this.selectedPlc.user = this.user;
               this.selectedPlc.password = this.password;
-              this.loadingPlcDetails = true;
+              this.loading = true;
               this.disableContinue = true;
               this.visuVars = [];
               this.error = null;
 
               ApiService.post("wago/details", this.selectedPlc)
                 .then(res => {
-                  this.loadingPlcDetails = false;
+                  this.loading = false;
                   this.disableContinue = false;
                   this.error = null;
                   this.selectedPlc = res.data;
@@ -300,7 +300,7 @@ export default {
                 })
                 .catch(err => {
                   this.error = err.response.data;
-                  this.loadingPlcDetails = false;
+                  this.loading = false;
                   this.disableContinue = false;
                 });
             } else {

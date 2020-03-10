@@ -7,6 +7,7 @@ import Things from "@/views/Things.vue";
 import Login from "@/views/Login.vue";
 import CreatePlc from "@/components/CreatePlc.vue";
 import CreateThing from "@/components/CreateThing.vue";
+import CreateSync from "@/components/CreateSync.vue";
 import { TokenService } from "../services/storage.service";
 
 Vue.use(Router);
@@ -32,6 +33,11 @@ const router = new Router({
       path: "/syncs",
       name: "syncs",
       component: Syncs
+    },
+    {
+      path: "/syncs/create",
+      name: "CreateSync",
+      component: CreateSync
     },
     {
       path: "/things",
