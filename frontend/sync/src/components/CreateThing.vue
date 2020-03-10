@@ -7,21 +7,27 @@
       <span
         v-if="currentStep === 1"
         class="subtitle-1 blue-grey--text darken-1--text"
-      >Please enter the name and the host address of your Thing.</span>
+        >Please enter the name and the host address of your Thing.</span
+      >
       <span
         v-if="currentStep === 2"
         class="subtitle-1 blue-grey--text darken-1--text"
-      >Please upload your thing certificate, private key and CA chain.</span>
+        >Please upload your thing certificate, private key and CA chain.</span
+      >
     </div>
     <br />
     <div id="stepperWrapper">
       <v-stepper v-model="currentStep" id="stepper" alt-labels>
         <v-stepper-header id="stepperHeader">
-          <v-stepper-step :complete="currentStep > 1" step="1">Name and Host</v-stepper-step>
+          <v-stepper-step :complete="currentStep > 1" step="1"
+            >Name and Host</v-stepper-step
+          >
 
           <v-divider></v-divider>
 
-          <v-stepper-step :complete="currentStep > 2" step="2">Certificates</v-stepper-step>
+          <v-stepper-step :complete="currentStep > 2" step="2"
+            >Certificates</v-stepper-step
+          >
         </v-stepper-header>
         <v-stepper-items>
           <v-stepper-content step="1" class="stepper-step-content mt-5">
@@ -31,7 +37,7 @@
                   <v-form class="ma-0">
                     <v-text-field
                       v-model="thingName"
-                      :rules="[rules.required, rules.min]"
+                      :rules="[rules.required, rules.minName]"
                       name="Name"
                       label="Name"
                       placeholder="Enter a name for your Thing"
@@ -47,11 +53,11 @@
                   <v-form class="ma-0">
                     <v-text-field
                       v-model="thingHost"
-                      :rules="[rules.required, rules.min]"
+                      :rules="[rules.required, rules.minHost]"
                       name="Host"
                       label="Host"
                       placeholder="Enter the Host address of the AWS Thing."
-                      hint="At least 3 characters"
+                      hint="At least 10 characters"
                       required
                       outlined
                     ></v-text-field>
@@ -75,12 +81,20 @@
                     outlined
                   >
                     <template v-slot:selection="{ index, text }">
-                      <v-chip v-if="index < 2" color="primary" dark label small>{{ text }}</v-chip>
+                      <v-chip
+                        v-if="index < 2"
+                        color="primary"
+                        dark
+                        label
+                        small
+                        >{{ text }}</v-chip
+                      >
 
                       <span
                         v-else-if="index === 2"
                         class="overline grey--text text--darken-3 mx-2"
-                      >+{{ files.length - 2 }} File(s)</span>
+                        >+{{ files.length - 2 }} File(s)</span
+                      >
                     </template>
                   </v-file-input>
                 </v-col>
@@ -97,12 +111,20 @@
                     outlined
                   >
                     <template v-slot:selection="{ index, text }">
-                      <v-chip v-if="index < 2" color="primary" dark label small>{{ text }}</v-chip>
+                      <v-chip
+                        v-if="index < 2"
+                        color="primary"
+                        dark
+                        label
+                        small
+                        >{{ text }}</v-chip
+                      >
 
                       <span
                         v-else-if="index === 2"
                         class="overline grey--text text--darken-3 mx-2"
-                      >+{{ files.length - 2 }} File(s)</span>
+                        >+{{ files.length - 2 }} File(s)</span
+                      >
                     </template>
                   </v-file-input>
                 </v-col>
@@ -119,12 +141,20 @@
                     outlined
                   >
                     <template v-slot:selection="{ index, text }">
-                      <v-chip v-if="index < 2" color="primary" dark label small>{{ text }}</v-chip>
+                      <v-chip
+                        v-if="index < 2"
+                        color="primary"
+                        dark
+                        label
+                        small
+                        >{{ text }}</v-chip
+                      >
 
                       <span
                         v-else-if="index === 2"
                         class="overline grey--text text--darken-3 mx-2"
-                      >+{{ files.length - 2 }} File(s)</span>
+                        >+{{ files.length - 2 }} File(s)</span
+                      >
                     </template>
                   </v-file-input>
                 </v-col>
@@ -139,7 +169,14 @@
 
     <div class="actionBar mt-5">
       <v-btn @click="cancelCreation" color="default" text large>Cancel</v-btn>
-      <v-btn outlined class="ml-5" @click="stepBack" large v-if="currentStep > 1">Back</v-btn>
+      <v-btn
+        outlined
+        class="ml-5"
+        @click="stepBack"
+        large
+        v-if="currentStep > 1"
+        >Back</v-btn
+      >
       <v-btn
         color="primary"
         class="ml-5"
@@ -147,14 +184,16 @@
         large
         v-if="currentStep < maxSteps"
         :disabled="disableContinue"
-      >Continue</v-btn>
+        >Continue</v-btn
+      >
       <v-btn
         @click="createThing"
         color="success"
         class="ml-5"
         large
         v-if="currentStep === maxSteps"
-      >Complete</v-btn>
+        >Complete</v-btn
+      >
     </div>
   </div>
 </template>
@@ -182,7 +221,8 @@ export default {
     error: null,
     rules: {
       required: value => !!value || "Required.",
-      min: v => v.length >= 3 || "Min 3 characters"
+      minName: v => v.length >= 3 || "Min 3 characters",
+      minHost: v => v.length >= 10 || "Min 10 characters"
     }
   }),
   components: {},
