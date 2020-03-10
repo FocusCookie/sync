@@ -1,11 +1,23 @@
 <template>
   <div>
     <div class="actionBar mt-5 mb-5">
-      <v-btn outlined @click="enableEditthings" class="ml-5" large v-if="things">
+      <v-btn
+        outlined
+        @click="enableEditthings"
+        class="ml-5"
+        large
+        v-if="things"
+      >
         Edit
         <v-icon right dark>mdi-pencil</v-icon>
       </v-btn>
-      <v-btn color="primary" class="ml-5" to="things/create" large v-if="things">
+      <v-btn
+        color="primary"
+        class="ml-5"
+        to="things/create"
+        large
+        v-if="things"
+      >
         Create a Thing
         <v-icon right dark>mdi-plus-box</v-icon>
       </v-btn>
@@ -26,20 +38,68 @@
               <v-item>
                 <v-card elevation="0">
                   <v-card-title class="headline">
-                    {{ thing.name }}
+                    {{ thing.thingName }}
                     <v-spacer></v-spacer>
-
-                    <v-chip color="primary" outlined label dark>
-                      <v-icon left>mdi-sitemap</v-icon>
-                      {{ thingVarCount(thing.files) }}
-                    </v-chip>
                   </v-card-title>
 
-                  <v-card-subtitle v-text="thing.ip"></v-card-subtitle>
+                  <v-card-subtitle
+                    v-text="thing.host"
+                    class="pb-1"
+                  ></v-card-subtitle>
+                  <v-card-text class="pb-2">
+                    <v-container>
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field
+                            label="Certificate"
+                            :value="thing.certificate"
+                            prepend-inner-icon="mdi-certificate-outline"
+                            outlined
+                            disabled
+                            dense
+                            hide-details
+                          >
+                          </v-text-field>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field
+                            label="Private Key"
+                            :value="thing.privateKey"
+                            prepend-inner-icon="mdi-certificate-outline"
+                            outlined
+                            disabled
+                            dense
+                            hide-details
+                          >
+                          </v-text-field>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col cols="12">
+                          <v-text-field
+                            label="CA Chain"
+                            :value="thing.caChain"
+                            prepend-inner-icon="mdi-certificate-outline"
+                            outlined
+                            disabled
+                            dense
+                            hide-details
+                          >
+                          </v-text-field>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </v-card-text>
 
-                  <v-card-actions class="pa-4">
+                  <v-card-actions class="pa-4" v-if="editthings">
                     <v-spacer></v-spacer>
-                    <v-btn text v-if="editthings" @click="deleteThing(thing._id)">
+                    <v-btn
+                      text
+                      v-if="editthings"
+                      @click="deleteThing(thing._id)"
+                    >
                       <v-icon color="grey">mdi-trash-can-outline</v-icon>
                     </v-btn>
                     <v-btn outlined v-if="false">
@@ -81,16 +141,25 @@ export default {
     }
   }),
   created() {
-    this.getthings();
+    this.getThings();
   },
   components: {
     Message
   },
   methods: {
-    getthings() {
-      ApiService.get("things")
+    getThings() {
+      ApiService.get("aws/things")
         .then(res => {
-          if (res.data.length > 0) this.things = res.data;
+          if (res.data.length > 0) {
+            res.data.forEach(thing => {
+              thing.caChain = thing.caChain.split("_")[2];
+              thing.certificate = thing.certificate.split("_")[2];
+              thing.privateKey = thing.privateKey.split("_")[2];
+            });
+
+            this.things = res.data;
+            console.log(this.things);
+          }
         })
         .catch(err => console.log(err));
     },
@@ -101,19 +170,12 @@ export default {
       this.editthings = !this.editthings;
     },
     deleteThing(id) {
-      ApiService.delete("things/" + id)
+      ApiService.delete("aws/things/" + id)
         .then(() => {
-          this.getthings();
+          this.things = null;
+          this.getThings();
         })
         .catch(err => alert(err.response.data));
-    },
-    thingVarCount(files) {
-      let total = 0;
-      console.log(files);
-      files.forEach(file => {
-        total += file.variables.length;
-      });
-      return total;
     }
   }
 };

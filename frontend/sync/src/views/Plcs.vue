@@ -35,7 +35,10 @@
                     </v-chip>
                   </v-card-title>
 
-                  <v-card-subtitle v-text="plc.ip"></v-card-subtitle>
+                  <v-card-subtitle
+                    v-text="plc.ip"
+                    class="pb-0"
+                  ></v-card-subtitle>
 
                   <v-card-actions class="pa-4">
                     <v-spacer></v-spacer>
