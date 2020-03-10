@@ -29,7 +29,22 @@ let secondStoredPlc;
 let synchronisationSchema;
 let editSynchronisationSchema;
 
+// where certs are stored in runtime
 const certsDirectory = path.join(__dirname, "../../../", "certs/aws/");
+
+// define the folder with the test certificates
+const testThingCertsDirectory = path.join(
+  __dirname,
+  "../../../aws certs/IP 10/"
+);
+// read out all the file names in the test certs dir
+let testThingCerts = null;
+fs.readdir(testThingCertsDirectory, (err, files) => {
+  let result = files.filter(
+    file => file !== ".DS_Store" && !file.includes("public.pem.key")
+  );
+  testThingCerts = result;
+});
 
 function deleteCerts() {
   fs.readdir(certsDirectory, (err, files) => {
@@ -1029,27 +1044,9 @@ describe("AWS Things Controller - integration test", () => {
       // add certs to awsThing
       await request(server)
         .post("/api/aws/things/" + storedAwsThing._id.toString() + "/certs")
-        .attach(
-          "certs",
-          path.join(
-            __dirname,
-            "../../../../aws certs/750-831/d6c62e892c-certificate.pem.crt"
-          )
-        )
-        .attach(
-          "certs",
-          path.join(
-            __dirname,
-            "../../../../aws certs/750-831/d6c62e892c-private.pem.key"
-          )
-        )
-        .attach(
-          "certs",
-          path.join(
-            __dirname,
-            "../../../../aws certs/750-831/AmazonRootCA1.pem"
-          )
-        )
+        .attach("certs", testThingCertsDirectory + testThingCerts[0])
+        .attach("certs", testThingCertsDirectory + testThingCerts[1])
+        .attach("certs", testThingCertsDirectory + testThingCerts[2])
         .set("x-auth-token", userToken);
 
       const storedSync = await synchronisationController.createSynchronisation(

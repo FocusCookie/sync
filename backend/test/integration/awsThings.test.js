@@ -8,7 +8,21 @@ const path = require("path");
 let thingSchema;
 let userToken;
 let storedThing;
-const certsDirectory = path.join(__dirname, "../", "../", "certs/aws/");
+const certsDirectory = path.join(__dirname, "../../certs/aws/");
+
+// define the folder with the test certificates
+const testThingCertsDirectory = path.join(
+  __dirname,
+  "../../../aws certs/IP 10/"
+);
+// read out all the file names in the test certs dir
+let testThingCerts = null;
+fs.readdir(testThingCertsDirectory, (err, files) => {
+  let result = files.filter(
+    file => file !== ".DS_Store" && !file.includes("public.pem.key")
+  );
+  testThingCerts = result;
+});
 
 function deleteCerts() {
   fs.readdir(certsDirectory, (err, files) => {
@@ -78,24 +92,9 @@ describe("AWS Routes", () => {
   const executePostThingCerts = id => {
     return request(server)
       .post("/api/aws/things/" + id + "/certs")
-      .attach(
-        "certs",
-        path.join(
-          __dirname,
-          "../../../aws certs/../../../aws certs/IP 10/2d80f0ea25-certificate.pem.crt"
-        )
-      )
-      .attach(
-        "certs",
-        path.join(
-          __dirname,
-          "../../../aws certs/IP 10/2d80f0ea25-private.pem.key"
-        )
-      )
-      .attach(
-        "certs",
-        path.join(__dirname, "../../../aws certs/IP 10/AmazonRootCA1.pem")
-      )
+      .attach("certs", testThingCertsDirectory + testThingCerts[0])
+      .attach("certs", testThingCertsDirectory + testThingCerts[1])
+      .attach("certs", testThingCertsDirectory + testThingCerts[2])
       .set("x-auth-token", userToken);
   };
 
@@ -623,24 +622,9 @@ describe("AWS Routes", () => {
         it("should return an 401 if no token is provided", async () => {
           const result = await request(server)
             .post("/api/aws/things/5dd65bccd4387dc776cdAAAA/certs")
-            .attach(
-              "certs",
-              path.join(
-                __dirname,
-                "../../../aws certs/../../../aws certs/IP 10/2d80f0ea25-certificate.pem.crt"
-              )
-            )
-            .attach(
-              "certs",
-              path.join(
-                __dirname,
-                "../../../aws certs/IP 10/2d80f0ea25-private.pem.key"
-              )
-            )
-            .attach(
-              "certs",
-              path.join(__dirname, "../../../aws certs/IP 10/AmazonRootCA1.pem")
-            );
+            .attach("certs", testThingCertsDirectory + testThingCerts[0])
+            .attach("certs", testThingCertsDirectory + testThingCerts[1])
+            .attach("certs", testThingCertsDirectory + testThingCerts[2]);
 
           expect(result.status).toBe(401);
           expect(result.error.text).toMatch(/access denied/i);
@@ -675,20 +659,8 @@ describe("AWS Routes", () => {
         const thing = await executePostThing();
         result = await request(server)
           .post("/api/aws/things/" + thing.body._id + "/certs")
-          .attach(
-            "certs",
-            path.join(
-              __dirname,
-              "../../../aws certs/../../../aws certs/IP 10/2d80f0ea25-certificate.pem.crt"
-            )
-          )
-          .attach(
-            "certs",
-            path.join(
-              __dirname,
-              "../../../aws certs/IP 10/2d80f0ea25-private.pem.key"
-            )
-          )
+          .attach("certs", testThingCertsDirectory + testThingCerts[0])
+          .attach("certs", testThingCertsDirectory + testThingCerts[1])
           .set("x-auth-token", userToken);
 
         expect(result.status).toBe(400);
@@ -699,20 +671,8 @@ describe("AWS Routes", () => {
         const thing = await executePostThing();
         result = await request(server)
           .post("/api/aws/things/" + thing.body._id + "/certs")
-          .attach(
-            "certs",
-            path.join(
-              __dirname,
-              "../../../aws certs/../../../aws certs/IP 10/2d80f0ea25-certificate.pem.crt"
-            )
-          )
-          .attach(
-            "certs",
-            path.join(
-              __dirname,
-              "../../../aws certs/IP 10/2d80f0ea25-private.pem.key"
-            )
-          )
+          .attach("certs", testThingCertsDirectory + testThingCerts[0])
+          .attach("certs", testThingCertsDirectory + testThingCerts[1])
           .attach(
             "certs",
             path.join(__dirname, "../../../aws certs/invalid.txt")
