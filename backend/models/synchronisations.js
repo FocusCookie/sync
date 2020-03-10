@@ -91,8 +91,8 @@ function createIntervalInstance(sync) {
                   );
                 });
 
-                thingsInstance.on("error", () => {
-                  debug(`[AWS Instance]: for SyncId: ${sync._id} error:`, err);
+                thingsInstance.on("error", err => {
+                  debug(`[AWS Instance]: for SyncId: ${sync._id} error:${err}`);
                 });
 
                 const temp = setInterval(() => {
