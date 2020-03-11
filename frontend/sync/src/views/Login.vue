@@ -6,10 +6,10 @@
         <v-col>
           <v-card width="398" id="roundedLoginCard" class="pa-6" raised>
             <v-img
-              src="../assets/loginLogo.png"
+              src="../assets/logo_big.svg"
               width="218"
-              height="48"
-              class="logo mt-3"
+              contain
+              class="logo mt-3 "
             ></v-img>
             <br />
             <v-card-title class="title"

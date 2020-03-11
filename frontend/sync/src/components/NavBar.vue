@@ -2,7 +2,7 @@
   <div id="nav">
     <div class="d-flex align-center float-left">
       <router-link to="/">
-        <v-img src="../assets/logo.png" class="mr-2"></v-img>
+        <v-img src="../assets/logo.svg" class="mr-2 mt-1"></v-img>
       </router-link>
 
       <v-btn to="/syncs" color="blue-grey darken-1 ml-2 " text x-large>

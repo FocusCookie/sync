@@ -1,6 +1,6 @@
 import Vue from "vue";
 import Router from "vue-router";
-import Home from "@/views/Home.vue";
+//import Home from "@/views/Home.vue";
 import Syncs from "@/views/Syncs.vue";
 import Plcs from "@/views/Plcs.vue";
 import Things from "@/views/Things.vue";
@@ -18,7 +18,7 @@ const router = new Router({
     {
       path: "/",
       name: "home",
-      component: Home
+      component: Syncs
     },
     {
       path: "/login",
