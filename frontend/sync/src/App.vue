@@ -60,4 +60,9 @@ export default {
 #appFooter {
   background: #cfd6de;
 }
+@media (min-width: 960px) {
+  .container {
+    max-width: 100%;
+  }
+}
 </style>
