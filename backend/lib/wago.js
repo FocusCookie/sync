@@ -372,12 +372,16 @@ function createArtiReadCommand(plc) {
 
 function getArtiValuesFromPlc(plc) {
   return new Promise((resolve, reject) => {
+    const plcSeries = plc.articleNumber.split("-")[1];
+    const viusUrlEnding =
+      plcSeries > 8000 ? "webvisu/webvisu.htm" : "plc/webvisu.htm";
+    const url = `http://${plc.ip}/${viusUrlEnding}`;
+
     plc.files.forEach((file, fileIndex) => {
-      axios({
-        method: "post",
-        url: "http://" + plc.ip + "/plc/webvisu.htm",
-        data: file.artiReadCommand
-      })
+      // TODO: IF the pfc hasnt enabled HTTP on Ports, it will come to an SSL error. Implement to upload the certs from pfc so that
+      // it is possible to make ssl requests
+      axios
+        .post(url, file.artiReadCommand)
         .then(response => {
           const data = response.data
             .substring(1, response.data.length - 1)
