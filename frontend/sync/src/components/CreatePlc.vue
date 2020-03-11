@@ -252,49 +252,63 @@ export default {
                   this.selectedPlc = res.data;
 
                   res.data.files.forEach(file => {
-                    file.variables.forEach(variable => {
-                      if (variable.prgName === "") variable.prgName = "Global";
-                      // Datatypes
-                      let datatype = parseInt(variable.datatype, 10);
-                      switch (datatype) {
-                        case 0:
-                          datatype = "BOOL";
-                          break;
-                        case 1:
-                          datatype = "INT";
-                          break;
-                        case 2:
-                          datatype = "BYTE";
-                          break;
-                        case 3:
-                          datatype = "Word";
-                          break;
-                        case 5:
-                          datatype = "DWORD";
-                          break;
-                        case 6:
-                          datatype = "LREAL";
-                          break;
-                        case 7:
-                          datatype = "TIME";
-                          break;
-                        case 8:
-                          datatype = "STRING";
-                          break;
-                        case 18:
-                          datatype = "DATE";
-                          break;
-                        default:
-                          break;
-                      }
-                      this.visuVars.push({
-                        varName: variable.varName,
-                        prgName: variable.prgName,
-                        datatype: datatype,
-                        arti: variable.arti,
-                        visu: file.name
+                    if (file.variables.length > 0) {
+                      file.variables.forEach(variable => {
+                        if (variable.prgName === "")
+                          variable.prgName = "Global";
+                        // Datatypes to human readable format
+                        let datatype = parseInt(variable.datatype, 10);
+                        switch (datatype) {
+                          case 0:
+                            datatype = "BOOL";
+                            break;
+                          case 1:
+                            datatype = "INT";
+                            break;
+                          case 2:
+                            datatype = "BYTE";
+                            break;
+                          case 3:
+                            datatype = "Word";
+                            break;
+                          case 5:
+                            datatype = "DWORD";
+                            break;
+                          case 6:
+                            datatype = "LREAL";
+                            break;
+                          case 7:
+                            datatype = "TIME";
+                            break;
+                          case 8:
+                            datatype = "STRING";
+                            break;
+                          case 18:
+                            datatype = "DATE";
+                            break;
+                          default:
+                            break;
+                        }
+
+                        // only push new variables int othe visuVars if there are not know already
+                        const existsAlready = this.visuVars.some(item =>
+                          item.varName === variable.varName &&
+                          item.prgName === variable.prgName
+                            ? true
+                            : false
+                        );
+
+                        if (!existsAlready) {
+                          this.visuVars.push({
+                            varName: variable.varName,
+                            prgName: variable.prgName,
+                            datatype: datatype,
+                            arti: variable.arti,
+                            visu: file.name
+                          });
+                        }
                       });
-                    });
+                    }
                   });
                   nextStep(this);
                 })
