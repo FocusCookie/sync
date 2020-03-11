@@ -22,27 +22,48 @@
       <v-item-group>
         <v-container>
           <v-row>
-            <v-col v-for="(plc, i) in plcs" :key="i" cols="6">
+            <v-col v-for="(plc, i) in plcs" :key="i" cols="12">
               <v-item>
                 <v-card elevation="0">
                   <v-card-title class="headline">
                     {{ plc.name }}
                     <v-spacer></v-spacer>
 
-                    <v-chip color="primary" outlined label dark>
+                    <v-chip
+                      color="primary"
+                      outlined
+                      label
+                      dark
+                      @click="plc.showVisuVars = !plc.showVisuVars"
+                    >
                       <v-icon left>mdi-sitemap</v-icon>
-                      {{ plcVarCount(plc.files) }}
+                      {{ plcVarCount(plc.files) }} Variables
                     </v-chip>
                   </v-card-title>
 
-                  <v-card-subtitle
-                    v-text="plc.ip"
-                    class="pb-0"
-                  ></v-card-subtitle>
+                  <v-card-subtitle v-text="plc.ip"></v-card-subtitle>
 
-                  <v-card-actions class="pa-4">
+                  <v-card-text v-if="plc.showVisuVars">
+                    <v-treeview open-on-click :items="plc.files">
+                      <template v-slot:prepend="{ item, open }">
+                        <v-icon v-if="!item.datatype">
+                          {{ open ? "mdi-folder-open" : "mdi-folder" }}
+                        </v-icon>
+                        <v-chip
+                          v-if="item.datatype"
+                          class="ma-2 datatypes"
+                          color="primary"
+                          outlined
+                          label
+                          >{{ item.datatype }}
+                        </v-chip>
+                      </template>
+                    </v-treeview>
+                  </v-card-text>
+
+                  <v-card-actions v-if="editPlcs" class="pa-4">
                     <v-spacer></v-spacer>
-                    <v-btn text v-if="editPlcs" @click="deletePlc(plc._id)">
+                    <v-btn text @click="deletePlc(plc._id)">
                       <v-icon color="grey">mdi-trash-can-outline</v-icon>
                     </v-btn>
                     <v-btn outlined v-if="false">
@@ -93,7 +114,31 @@ export default {
     getPlcs() {
       ApiService.get("wago")
         .then(res => {
-          if (res.data.length > 0) this.plcs = res.data;
+          if (res.data.length > 0) {
+            this.plcs = res.data.map(plc => {
+              return {
+                name: plc.name,
+                showVisuVars: false,
+                _id: plc._id,
+                ip: plc.ip,
+                mac: plc.mac,
+                articleNumber: plc.articleNumber,
+                files: plc.files.map((file, index) => {
+                  return {
+                    id: index,
+                    name: file.name,
+                    children: file.variables.map((variable, varIndex) => {
+                      return {
+                        id: varIndex,
+                        name: variable.prgName + "." + variable.varName,
+                        datatype: variable.datatype
+                      };
+                    })
+                  };
+                })
+              };
+            });
+          }
         })
         .catch(err => console.log(err));
     },
@@ -114,7 +159,7 @@ export default {
     plcVarCount(files) {
       let total = 0;
       files.forEach(file => {
-        total += file.variables.length;
+        total += file.children.length;
       });
       return total;
     }
