@@ -12,9 +12,11 @@
               class="logo mt-3 "
             ></v-img>
             <br />
-            <v-card-title class="title"
-              >👋 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quam
-              consectetur volutpat amet porttitor.
+            <v-card-title class="text-center subtitle-1"
+              >👋 Welcome to cosync! <br />
+              cosync is the easiest way to synchronize <br />
+              your CODESYS PLC Visualisation with your digital Twin in the
+              cloud.
             </v-card-title>
             <br />
             <v-card-text>
